@@ -143,12 +143,32 @@ example to SQLite.
 - Do not put literal `{{ }}` in Vue templates; build placeholder examples in
   `<script setup>` constants.
 
+## Toolchain, CI, And Releases
+
+- Lint/format: Biome (`biome.json`), enforced in CI. `npm run lint` to check,
+  `npm run format` to auto-fix. Biome only analyzes the `<script>` block of Vue
+  SFCs, so template-blind rules (`noUnusedVariables`, `noUnusedImports`) are
+  disabled for `*.vue` via an override — do not "fix" unused-looking imports in
+  Vue files without checking the template.
+- CI (`.github/workflows/ci.yml`): lint, build, typecheck, and test on Node 20
+  and 24, plus a no-push Docker runtime-image build. Runs on pushes to master
+  and all pull requests.
+- Releases (`.github/workflows/release.yml`): pushing a `vX.Y.Z` tag publishes
+  a multi-arch (amd64/arm64) image to `ghcr.io/xingrz/labelprint` tagged
+  `X.Y.Z`, `X.Y`, and `latest`, then creates a GitHub Release with generated
+  notes.
+- Release procedure: update `CHANGELOG.md` (Keep a Changelog format) and the
+  workspace `version` fields, commit, then
+  `git tag vX.Y.Z && git push origin master vX.Y.Z`.
+
 ## Verification
 
 Default checks:
 
 ```bash
+npm run lint
 npm run build
+npm run typecheck
 npm test
 ```
 
