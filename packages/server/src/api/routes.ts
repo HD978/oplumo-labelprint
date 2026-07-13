@@ -1,17 +1,17 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
 import {
   collectParams,
-  syncParamDefs,
   type PrintDelivery,
   type PrintJobFormat,
   type PrintRecord,
   type PrintRequest,
   type PrintTargetConfig,
+  syncParamDefs,
   type TemplateDoc,
 } from '@labelprint/shared';
-import { addHistory, repos } from '../store/repos.js';
-import { renderJob, renderPreviewPng, runPrint } from '../pipeline.js';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import { listFontFamilies } from '../fonts.js';
+import { renderJob, renderPreviewPng, runPrint } from '../pipeline.js';
+import { addHistory, repos } from '../store/repos.js';
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -135,7 +135,9 @@ function clientPrintDetail(target: PrintTargetConfig, query: ClientPrintHistoryQ
     case 'browser-dialog':
       return 'opened browser print dialog';
     case 'web-bluetooth':
-      return bytes ? `sent ${bytes} bytes by browser via Web Bluetooth` : 'sent by browser via Web Bluetooth';
+      return bytes
+        ? `sent ${bytes} bytes by browser via Web Bluetooth`
+        : 'sent by browser via Web Bluetooth';
     case 'web-usb':
       return bytes ? `sent ${bytes} bytes by browser via WebUSB` : 'sent by browser via WebUSB';
     default:
@@ -144,11 +146,15 @@ function clientPrintDetail(target: PrintTargetConfig, query: ClientPrintHistoryQ
 }
 
 export async function registerApi(app: FastifyInstance): Promise<void> {
-  app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (_req, body, done) => {
-    const values: Record<string, string> = {};
-    for (const [key, value] of new URLSearchParams(String(body))) values[key] = value;
-    done(null, values);
-  });
+  app.addContentTypeParser(
+    'application/x-www-form-urlencoded',
+    { parseAs: 'string' },
+    (_req, body, done) => {
+      const values: Record<string, string> = {};
+      for (const [key, value] of new URLSearchParams(String(body))) values[key] = value;
+      done(null, values);
+    },
+  );
 
   app.get('/api/health', async () => ({ ok: true, service: 'labelprint', version: '0.1.0' }));
 
@@ -206,7 +212,10 @@ export async function registerApi(app: FastifyInstance): Promise<void> {
   // ---- print targets ----
   app.get('/api/targets', async () => (await repos.targets.all()).map(normalizeTarget));
   app.post<{ Body: PrintTargetConfig }>('/api/targets', async (req) => {
-    const target = normalizeTarget({ ...req.body, id: req.body.id || `target_${Date.now().toString(36)}` });
+    const target = normalizeTarget({
+      ...req.body,
+      id: req.body.id || `target_${Date.now().toString(36)}`,
+    });
     return repos.targets.put(target);
   });
   app.put<{ Body: { ids?: unknown } }>('/api/targets/order', async (req, reply) => {
@@ -224,7 +233,10 @@ export async function registerApi(app: FastifyInstance): Promise<void> {
       ordered.push(target);
       seen.add(id);
     }
-    return repos.targets.replaceAll([...ordered, ...existing.filter((target) => !seen.has(target.id))]);
+    return repos.targets.replaceAll([
+      ...ordered,
+      ...existing.filter((target) => !seen.has(target.id)),
+    ]);
   });
   app.put<{ Params: IdParams; Body: PrintTargetConfig }>('/api/targets/:id', async (req) =>
     repos.targets.put(normalizeTarget({ ...req.body, id: req.params.id })),
@@ -258,7 +270,8 @@ export async function registerApi(app: FastifyInstance): Promise<void> {
 
   app.post<{ Params: TargetTemplateParams; Querystring: CopiesQuery; Body: unknown }>(
     '/api/targets/:targetId/templates/:templateId/render-job',
-    async (req, reply) => sendRenderedJob(printRequestFromPath(req.params, req.body, req.query), reply),
+    async (req, reply) =>
+      sendRenderedJob(printRequestFromPath(req.params, req.body, req.query), reply),
   );
   app.post<{ Params: TargetTemplateParams; Body: unknown }>(
     '/api/targets/:targetId/templates/:templateId/render-job/:copies',
@@ -267,7 +280,11 @@ export async function registerApi(app: FastifyInstance): Promise<void> {
   app.post<{ Params: TargetTemplateParams; Querystring: ClientPrintHistoryQuery; Body: unknown }>(
     '/api/targets/:targetId/templates/:templateId/history',
     async (req, reply) =>
-      sendClientPrintHistory(printRequestFromPath(req.params, req.body, req.query), req.query, reply),
+      sendClientPrintHistory(
+        printRequestFromPath(req.params, req.body, req.query),
+        req.query,
+        reply,
+      ),
   );
 
   // ---- print ----
@@ -299,7 +316,10 @@ async function sendRenderedJob(req: PrintRequest, reply: FastifyReply) {
     const outcome = await renderJob(req, repos);
     return reply
       .header('Content-Type', 'application/octet-stream')
-      .header('Content-Disposition', `attachment; filename="${req.templateId}.${outcome.extension}"`)
+      .header(
+        'Content-Disposition',
+        `attachment; filename="${req.templateId}.${outcome.extension}"`,
+      )
       .send(outcome.data);
   } catch (e: unknown) {
     return reply.code(400).send({ ok: false, error: e instanceof Error ? e.message : String(e) });

@@ -50,11 +50,16 @@ export interface WebBluetoothSendProgress {
 
 export interface WebBluetoothPrinterConnection {
   deviceName: string;
-  write(data: Uint8Array, onProgress?: (progress: WebBluetoothSendProgress) => void): Promise<WebBluetoothSendResult>;
+  write(
+    data: Uint8Array,
+    onProgress?: (progress: WebBluetoothSendProgress) => void,
+  ): Promise<WebBluetoothSendResult>;
   close(): void;
 }
 
-export async function connectTsplWebBluetooth(target: PrintTargetConfig): Promise<WebBluetoothPrinterConnection> {
+export async function connectTsplWebBluetooth(
+  target: PrintTargetConfig,
+): Promise<WebBluetoothPrinterConnection> {
   const nav = navigator as BluetoothNavigatorLike;
   if (!nav.bluetooth) throw new Error(t('print.bluetoothUnsupported'));
 

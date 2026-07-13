@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { ChevronDown, ChevronRight } from 'lucide-vue-next';
+import { ref } from 'vue';
 import { t } from '../lib/i18n';
 import { setParamDefault, setParamLabel, setParamMultiline, state, usedParams } from '../lib/store';
 

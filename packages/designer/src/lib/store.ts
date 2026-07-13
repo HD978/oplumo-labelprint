@@ -1,19 +1,19 @@
-import { computed, reactive, watch } from 'vue';
 import {
   collectParams,
   compileToSvg,
   emptyTemplate,
-  makeElement,
   type LabelElement,
   type MediaProfile,
   type MediaType,
+  makeElement,
   type ParamDef,
   type PrintRecord,
   type PrintTargetConfig,
   type TemplateDoc,
 } from '@labelprint/shared';
+import { computed, reactive, watch } from 'vue';
 import { api } from './api';
-import { bboxOf, translatePatch, unionBox, type Box } from './geometry';
+import { type Box, bboxOf, translatePatch, unionBox } from './geometry';
 import { t } from './i18n';
 
 type AlignKind = 'left' | 'hcenter' | 'right' | 'top' | 'vmiddle' | 'bottom';
@@ -29,7 +29,9 @@ function isViewName(value: string): value is ViewName {
   return viewNames.includes(value as ViewName);
 }
 
-function parseHashRoute(hash = typeof window === 'undefined' ? '' : window.location.hash): HashRoute | null {
+function parseHashRoute(
+  hash = typeof window === 'undefined' ? '' : window.location.hash,
+): HashRoute | null {
   const raw = hash.replace(/^#/, '').replace(/^\/+/, '');
   if (!raw) return null;
   const [viewRaw, templateRaw] = raw.split('/');
@@ -130,14 +132,22 @@ function writeHashRoute(route: HashRoute, replace = false): void {
   const nextHash = hashForRoute(route);
   if (window.location.hash === nextHash) return;
   if (replace) {
-    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}${window.location.search}${nextHash}`,
+    );
   } else {
     window.location.hash = nextHash;
   }
 }
 
 function applyHashRoute(route: HashRoute): void {
-  if (route.view === 'design' && route.templateId && state.templates.some((t) => t.id === route.templateId)) {
+  if (
+    route.view === 'design' &&
+    route.templateId &&
+    state.templates.some((t) => t.id === route.templateId)
+  ) {
     selectTemplate(route.templateId);
   }
   if (
@@ -163,8 +173,7 @@ export function initHashRouting(): void {
     if (next) {
       applyHashRoute(next);
       writeHashRoute(routeFromState(next.view), true);
-    }
-    else writeHashRoute(routeFromState(), true);
+    } else writeHashRoute(routeFromState(), true);
   });
 }
 
@@ -237,10 +246,7 @@ function setStatus(s: string): void {
 
 export async function loadAll(): Promise<void> {
   try {
-    const [templates, targets] = await Promise.all([
-      api.templates(),
-      api.targets(),
-    ]);
+    const [templates, targets] = await Promise.all([api.templates(), api.targets()]);
     state.templates = templates;
     state.targets = targets;
     ensurePrintTarget();
@@ -248,19 +254,29 @@ export async function loadAll(): Promise<void> {
     if (route?.view === 'design' && route.templateId) selectTemplate(route.templateId);
     if (!state.doc && templates.length) selectTemplate(templates[0]!.id);
     // Keep the restored print template + values if it still exists; else pick the first.
-    if (route?.view === 'print' && route.templateId && templates.some((t) => t.id === route.templateId)) {
-      if (state.printTemplateId !== route.templateId) selectPrintTemplate(route.templateId, { syncHash: false });
+    if (
+      route?.view === 'print' &&
+      route.templateId &&
+      templates.some((t) => t.id === route.templateId)
+    ) {
+      if (state.printTemplateId !== route.templateId)
+        selectPrintTemplate(route.templateId, { syncHash: false });
     }
-    if (templates.length && (!state.printTemplateId || !templates.some((t) => t.id === state.printTemplateId)))
+    if (
+      templates.length &&
+      (!state.printTemplateId || !templates.some((t) => t.id === state.printTemplateId))
+    )
       selectPrintTemplate(templates[0]!.id, { syncHash: false });
     if (route) {
       applyHashRoute(route);
       writeHashRoute(routeFromState(route.view), true);
-    }
-    else writeHashRoute(routeFromState(), true);
+    } else writeHashRoute(routeFromState(), true);
     await loadHistory();
     // Fonts can be a slow first scan on the print host — load without blocking.
-    api.fonts().then((r) => (state.fonts = r.families)).catch(() => undefined);
+    api
+      .fonts()
+      .then((r) => (state.fonts = r.families))
+      .catch(() => undefined);
     setStatus(t('status.connected'));
   } catch (e) {
     setStatus(t('status.connectFailed', { message: (e as Error).message }));
@@ -277,7 +293,11 @@ export function selectTemplate(id: string): void {
 
 export function newTemplate(media: MediaProfile): void {
   const id = genId('t');
-  const doc = emptyTemplate(id, t('template.newName', { number: state.templates.length + 1 }), media);
+  const doc = emptyTemplate(
+    id,
+    t('template.newName', { number: state.templates.length + 1 }),
+    media,
+  );
   state.templates.push(doc);
   state.doc = clone(doc);
   state.selectedIds = [];
@@ -430,7 +450,9 @@ export function zorder(dir: 'front' | 'back' | 'forward' | 'backward'): void {
   for (const el of selectedElements.value) reorder(el.id, dir);
 }
 
-export function setMediaGeometry(patch: Partial<{ widthMm: number; heightMm: number; type: MediaType; gapMm: number }>): void {
+export function setMediaGeometry(
+  patch: Partial<{ widthMm: number; heightMm: number; type: MediaType; gapMm: number }>,
+): void {
   if (!state.doc) return;
   Object.assign(state.doc.media, patch);
   markDirty();
@@ -555,7 +577,10 @@ export function setParamMultiline(key: string, value: boolean): void {
 
 // ---- views / panels ----
 
-export function setActiveView(v: ViewName, opts: { replace?: boolean; syncHash?: boolean } = {}): void {
+export function setActiveView(
+  v: ViewName,
+  opts: { replace?: boolean; syncHash?: boolean } = {},
+): void {
   state.activeView = v;
   if (v === 'history') void loadHistory();
   if (opts.syncHash !== false) writeHashRoute(routeFromState(v), opts.replace);
@@ -578,13 +603,19 @@ export function selectPrintTemplate(id: string, opts: { syncHash?: boolean } = {
   const v: Record<string, string> = {};
   if (t) for (const key of collectParams(t)) v[key] = t.defaults?.[key] ?? '';
   state.printValues = v;
-  if (opts.syncHash !== false && state.activeView === 'print') writeHashRoute(routeFromState('print'), true);
+  if (opts.syncHash !== false && state.activeView === 'print')
+    writeHashRoute(routeFromState('print'), true);
 }
 
 export async function printNow(): Promise<void> {
   if (!state.printTemplateId) throw new Error(t('error.noTemplateSelected'));
   if (!state.printTargetId) throw new Error(t('error.noTargetSelected'));
-  const res = await api.printTarget(state.printTargetId, state.printTemplateId, state.printValues, state.printCopies);
+  const res = await api.printTarget(
+    state.printTargetId,
+    state.printTemplateId,
+    state.printValues,
+    state.printCopies,
+  );
   setStatus(t('status.printed', { target: res.target, detail: res.detail }));
   await loadHistory();
 }

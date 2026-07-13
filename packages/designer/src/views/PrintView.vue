@@ -1,15 +1,33 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Copy, Eye, Maximize2, Printer as PrinterIcon, Settings, TerminalSquare, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
 import type { PrintTargetConfig } from '@labelprint/shared';
-import { t } from '../lib/i18n';
-import { loadHistory, printNow, printParams, printTemplate, saveTarget, selectPrintTemplate, state } from '../lib/store';
+import {
+  Copy,
+  Eye,
+  Maximize2,
+  Printer as PrinterIcon,
+  Settings,
+  TerminalSquare,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-vue-next';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import IconButton from '../components/IconButton.vue';
+import TargetSettingsDialog from '../components/TargetSettingsDialog.vue';
 import { api } from '../lib/api';
+import { t } from '../lib/i18n';
 import { makeImagePdfBlob, pdfFileName } from '../lib/pdf';
+import {
+  loadHistory,
+  printNow,
+  printParams,
+  printTemplate,
+  saveTarget,
+  selectPrintTemplate,
+  state,
+} from '../lib/store';
 import { connectTsplWebBluetooth, type WebBluetoothSendProgress } from '../lib/webBluetooth';
 import { connectTsplWebUsb } from '../lib/webUsb';
-import TargetSettingsDialog from '../components/TargetSettingsDialog.vue';
-import IconButton from '../components/IconButton.vue';
 
 const frameEl = ref<HTMLDivElement | null>(null);
 const previewUrl = ref('');
@@ -40,7 +58,10 @@ const fitPreviewPxPerMm = computed(() => {
   const naturalW = previewNatural.value.w || tmpl.media.widthMm * 8;
   const naturalH = previewNatural.value.h || tmpl.media.heightMm * 8;
   const scale = Math.max(0.1, Math.min(availableW / naturalW, availableH / naturalH));
-  return Math.max(MIN_PREVIEW_ZOOM, Math.min(MAX_PREVIEW_ZOOM, (naturalW * scale) / tmpl.media.widthMm));
+  return Math.max(
+    MIN_PREVIEW_ZOOM,
+    Math.min(MAX_PREVIEW_ZOOM, (naturalW * scale) / tmpl.media.widthMm),
+  );
 });
 const previewStyle = computed(() => {
   const tmpl = printTemplate.value;
@@ -55,7 +76,9 @@ const previewStyle = computed(() => {
   const scale = Math.max(0.1, Math.min(availableW / naturalW, availableH / naturalH));
   return { width: `${Math.floor(naturalW * scale)}px` };
 });
-const zoomLabel = computed(() => (previewZoom.value === 'fit' ? t('print.zoomFit') : `${previewZoom.value}px/mm`));
+const zoomLabel = computed(() =>
+  previewZoom.value === 'fit' ? t('print.zoomFit') : `${previewZoom.value}px/mm`,
+);
 const bluetoothProgressPercent = computed(() => {
   const p = bluetoothProgress.value;
   if (!p?.totalBytes) return 0;
@@ -77,14 +100,16 @@ const curlHostOptions = computed(() => {
     const u = new URL(current);
     const suffix = u.port ? `:${u.port}` : '';
     const loopback = `${u.protocol}//127.0.0.1${suffix}`;
-    if (loopback !== current) opts.push({ value: loopback, label: t('print.cliHostLoopback', { host: loopback }) });
+    if (loopback !== current)
+      opts.push({ value: loopback, label: t('print.cliHostLoopback', { host: loopback }) });
   } catch {
     // Keep the current-origin option only.
   }
   return opts;
 });
 const curlOrigin = computed(() => {
-  if (selectedCurlOrigin.value === '__custom') return normalizeOrigin(customCurlOrigin.value || currentOrigin());
+  if (selectedCurlOrigin.value === '__custom')
+    return normalizeOrigin(customCurlOrigin.value || currentOrigin());
   return selectedCurlOrigin.value || currentOrigin();
 });
 const curlCommand = computed(() => {
@@ -212,7 +237,9 @@ function loadImage(blob: Blob): Promise<HTMLImageElement> {
   });
 }
 
-async function previewAsJpeg(blob: Blob): Promise<{ jpeg: Uint8Array; width: number; height: number }> {
+async function previewAsJpeg(
+  blob: Blob,
+): Promise<{ jpeg: Uint8Array; width: number; height: number }> {
   const img = await loadImage(blob);
   const canvas = document.createElement('canvas');
   canvas.width = img.naturalWidth;
@@ -224,7 +251,11 @@ async function previewAsJpeg(blob: Blob): Promise<{ jpeg: Uint8Array; width: num
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(img, 0, 0);
   const jpegBlob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(t('print.pdfEncodeFailed')))), 'image/jpeg', 0.98);
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error(t('print.pdfEncodeFailed')))),
+      'image/jpeg',
+      0.98,
+    );
   });
   return {
     jpeg: new Uint8Array(await jpegBlob.arrayBuffer()),
@@ -288,9 +319,16 @@ async function printWebBluetoothTspl(target: PrintTargetConfig): Promise<void> {
     const job = new Uint8Array(await res.arrayBuffer());
     const sent = await connection.write(job, (progress) => {
       bluetoothProgress.value = progress;
-      msg.value = t('print.bluetoothProgress', { sent: progress.sentBytes, total: progress.totalBytes });
+      msg.value = t('print.bluetoothProgress', {
+        sent: progress.sentBytes,
+        total: progress.totalBytes,
+      });
     });
-    state.status = t('status.bluetoothSent', { target: target.name, bytes: sent.bytes, device: sent.deviceName });
+    state.status = t('status.bluetoothSent', {
+      target: target.name,
+      bytes: sent.bytes,
+      device: sent.deviceName,
+    });
     await recordClientPrint(target, { bytes: sent.bytes });
   } finally {
     connection.close();
@@ -304,17 +342,30 @@ async function printWebUsbTspl(target: PrintTargetConfig): Promise<void> {
     const job = new Uint8Array(await res.arrayBuffer());
     const sent = await connection.write(job);
     await rememberWebUsbDevice(target, connection.deviceInfo);
-    state.status = t('status.webUsbSent', { target: target.name, bytes: sent.bytes, device: sent.deviceName });
+    state.status = t('status.webUsbSent', {
+      target: target.name,
+      bytes: sent.bytes,
+      device: sent.deviceName,
+    });
     await recordClientPrint(target, { bytes: sent.bytes });
   } finally {
     await connection.close();
   }
 }
 
-async function recordClientPrint(target: PrintTargetConfig, opts: { bytes?: number } = {}): Promise<void> {
+async function recordClientPrint(
+  target: PrintTargetConfig,
+  opts: { bytes?: number } = {},
+): Promise<void> {
   if (!state.printTemplateId) return;
   try {
-    await api.recordClientPrint(target.id, state.printTemplateId, state.printValues, state.printCopies, opts);
+    await api.recordClientPrint(
+      target.id,
+      state.printTemplateId,
+      state.printValues,
+      state.printCopies,
+      opts,
+    );
     await loadHistory();
   } catch (e) {
     console.warn('Failed to record browser-managed print', e);
@@ -341,20 +392,23 @@ async function rememberWebUsbDevice(
 }
 
 function htmlEscape(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function waitForPrintImages(doc: Document): Promise<void> {
   const images = Array.from(doc.images);
   return Promise.all(
-    images.map(
-      (img) =>
-        img.complete
-          ? Promise.resolve()
-          : new Promise<void>((resolve, reject) => {
-              img.onload = () => resolve();
-              img.onerror = () => reject(new Error(t('print.imageLoadFailed')));
-            }),
+    images.map((img) =>
+      img.complete
+        ? Promise.resolve()
+        : new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error(t('print.imageLoadFailed')));
+          }),
     ),
   ).then(() => undefined);
 }
@@ -400,7 +454,9 @@ img { display: block; width: 100%; height: 100%; object-fit: fill; }
     URL.revokeObjectURL(blobUrl);
     frame.remove();
   };
-  frame.contentWindow?.addEventListener('afterprint', () => setTimeout(cleanup, 500), { once: true });
+  frame.contentWindow?.addEventListener('afterprint', () => setTimeout(cleanup, 500), {
+    once: true,
+  });
   setTimeout(cleanup, 60_000);
   frame.contentWindow?.focus();
   frame.contentWindow?.print();
@@ -417,9 +473,12 @@ async function doPrint(): Promise<void> {
     if (!target) throw new Error(t('error.noTargetSelected'));
     if (target.format === 'pdf' && target.delivery === 'download') await downloadPdf(target);
     else if (target.format === 'browser-print-page') await openBrowserPrint(target);
-    else if (target.format === 'tspl-bitmap' && target.delivery === 'download') await downloadTspl(target);
-    else if (target.format === 'tspl-bitmap' && target.delivery === 'web-bluetooth') await printWebBluetoothTspl(target);
-    else if (target.format === 'tspl-bitmap' && target.delivery === 'web-usb') await printWebUsbTspl(target);
+    else if (target.format === 'tspl-bitmap' && target.delivery === 'download')
+      await downloadTspl(target);
+    else if (target.format === 'tspl-bitmap' && target.delivery === 'web-bluetooth')
+      await printWebBluetoothTspl(target);
+    else if (target.format === 'tspl-bitmap' && target.delivery === 'web-usb')
+      await printWebUsbTspl(target);
     else await printNow();
     msg.value = state.status;
   } catch (e) {
@@ -431,7 +490,7 @@ async function doPrint(): Promise<void> {
 
 // Auto-preview on template change and (debounced) on value edits.
 watch(
-  () => state.printTemplateId + '|' + JSON.stringify(state.printValues),
+  () => `${state.printTemplateId}|${JSON.stringify(state.printValues)}`,
   () => {
     if (!state.printTemplateId) return;
     clearTimeout(debounce);

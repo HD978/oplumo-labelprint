@@ -1,6 +1,6 @@
 import { type Dirent, readdirSync } from 'node:fs';
-import path from 'node:path';
 import os from 'node:os';
+import path from 'node:path';
 import * as fontkit from 'fontkit';
 
 /**

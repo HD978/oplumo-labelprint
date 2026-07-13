@@ -12,14 +12,9 @@
  * Pure & isomorphic: no Node or DOM APIs. Barcode/QR/image pixels are injected via
  * `assets` (caller pre-renders them, since that needs platform-specific libraries).
  */
-import type {
-  BoxElement,
-  LabelElement,
-  LineElement,
-  TemplateDoc,
-  TextElement,
-} from './types.js';
+
 import { applyParams, resolveValue, splitPlaceholders } from './params.js';
+import type { BoxElement, LabelElement, LineElement, TemplateDoc, TextElement } from './types.js';
 import { ptToMm } from './units.js';
 
 /** Colour for parameter-driven text in the designer canvas (matches the param panel). */
@@ -76,9 +71,12 @@ function renderText(el: TextElement, doc: TemplateDoc, opts: CompileOptions): st
 
   // Design mode keeps the raw template (placeholders coloured per-segment); output mode
   // substitutes values first, then splits on newlines.
-  const lines = opts.designMode ? el.text.split('\n') : applyParams(el.text, opts.values, doc).split('\n');
+  const lines = opts.designMode
+    ? el.text.split('\n')
+    : applyParams(el.text, opts.values, doc).split('\n');
 
-  const anchorX = el.align === 'center' ? el.x + el.w / 2 : el.align === 'right' ? el.x + el.w : el.x;
+  const anchorX =
+    el.align === 'center' ? el.x + el.w / 2 : el.align === 'right' ? el.x + el.w : el.x;
   const textAnchor = el.align === 'center' ? 'middle' : el.align === 'right' ? 'end' : 'start';
 
   // Visual block height: N-1 inter-baseline gaps plus one glyph height. Using N*lh
@@ -113,7 +111,7 @@ function renderText(el: TextElement, doc: TemplateDoc, opts: CompileOptions): st
 }
 
 function renderLine(el: LineElement): string {
-  const dash = el.dash && el.dash.length ? ` stroke-dasharray="${el.dash.map(num).join(',')}"` : '';
+  const dash = el.dash?.length ? ` stroke-dasharray="${el.dash.map(num).join(',')}"` : '';
   return (
     `<line x1="${num(el.x)}" y1="${num(el.y)}" x2="${num(el.x2)}" y2="${num(el.y2)}" ` +
     `stroke="${esc(el.color ?? '#000000')}" stroke-width="${num(el.strokeMm)}" stroke-linecap="butt"${dash}/>`
@@ -137,8 +135,10 @@ function renderAsset(
   const h = el.type === 'qrcode' ? el.size : el.h;
   const href = opts.assets?.[el.id];
   if (href) {
-    return `<image x="${num(el.x)}" y="${num(el.y)}" width="${num(w)}" height="${num(h)}" ` +
-      `href="${esc(href)}" preserveAspectRatio="${el.type === 'image' && (el as { fit?: string }).fit === 'cover' ? 'xMidYMid slice' : 'none'}"/>`;
+    return (
+      `<image x="${num(el.x)}" y="${num(el.y)}" width="${num(w)}" height="${num(h)}" ` +
+      `href="${esc(href)}" preserveAspectRatio="${el.type === 'image' && (el as { fit?: string }).fit === 'cover' ? 'xMidYMid slice' : 'none'}"/>`
+    );
   }
   if (opts.placeholders || opts.designMode) {
     const label = el.type === 'qrcode' ? 'QR' : el.type === 'barcode' ? 'BARCODE' : 'IMG';

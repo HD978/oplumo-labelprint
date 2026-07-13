@@ -29,10 +29,10 @@
   --radius-sm: 6px;
   --shadow-panel: 0 1px 2px rgba(24, 32, 51, 0.06), 0 12px 34px rgba(24, 32, 51, 0.08);
   --shadow-paper: 0 2px 3px rgba(24, 32, 51, 0.08), 0 18px 44px rgba(24, 32, 51, 0.15);
-  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
 
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   --bg: #10141b;
   --panel: #171c25;
   --panel-subtle: #1d2531;
@@ -161,14 +161,14 @@ textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.14);
 }
-input[type='checkbox'],
-input[type='radio'] {
+input[type="checkbox"],
+input[type="radio"] {
   width: auto;
   min-height: 0;
   padding: 0;
   accent-color: var(--accent);
 }
-input[type='color'] {
+input[type="color"] {
   width: 34px;
   min-height: 28px;
   padding: 2px;
@@ -218,7 +218,7 @@ label {
   color: var(--muted);
 }
 .mono {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 ::-webkit-scrollbar {
@@ -290,8 +290,7 @@ label {
   overflow: auto;
   background:
     linear-gradient(var(--canvas-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px),
-    var(--canvas-bg);
+    linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px), var(--canvas-bg);
   background-size: 24px 24px;
   display: flex;
   align-items: center;

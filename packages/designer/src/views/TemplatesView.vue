@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Copy, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
 import { compileToSvg, defaultMediaProfiles, type TemplateDoc } from '@labelprint/shared';
+import { Copy, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
 import { confirmDialog } from '../lib/confirm';
 import { mediaTypeLabel, t } from '../lib/i18n';
 import {

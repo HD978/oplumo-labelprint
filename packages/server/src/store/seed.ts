@@ -34,7 +34,14 @@ function text(
   };
 }
 
-function line(id: string, x: number, y: number, x2: number, y2: number, strokeMm = 0.3): LabelElement {
+function line(
+  id: string,
+  x: number,
+  y: number,
+  x2: number,
+  y2: number,
+  strokeMm = 0.3,
+): LabelElement {
   return { id, type: 'line', x, y, x2, y2, strokeMm };
 }
 
@@ -185,7 +192,17 @@ export function seedTemplates(): TemplateDoc[] {
     elements: [
       text('d_name', 3, 3, 52, 7, '{{name}}', 12, { fontWeight: 'bold' }),
       text('d_sku', 3, 11, 52, 5, 'SKU: {{sku}}', 9),
-      { id: 'd_bc', type: 'barcode', x: 3, y: 18, w: 48, h: 14, symbology: 'code128', value: '{{barcode}}', showText: true },
+      {
+        id: 'd_bc',
+        type: 'barcode',
+        x: 3,
+        y: 18,
+        w: 48,
+        h: 14,
+        symbology: 'code128',
+        value: '{{barcode}}',
+        showText: true,
+      },
       { id: 'd_qr', type: 'qrcode', x: 58, y: 7, size: 20, value: '{{qr}}', ecc: 'M' },
     ],
     params: [

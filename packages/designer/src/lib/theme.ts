@@ -17,7 +17,11 @@ export const themeState = reactive({
 });
 
 export const currentTheme = computed<Theme>(() =>
-  themeState.themeChoice === 'auto' ? (systemDark.value ? 'dark' : 'light') : themeState.themeChoice,
+  themeState.themeChoice === 'auto'
+    ? systemDark.value
+      ? 'dark'
+      : 'light'
+    : themeState.themeChoice,
 );
 
 export function setThemeChoice(choice: ThemeChoice): void {

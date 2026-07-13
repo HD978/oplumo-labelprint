@@ -45,7 +45,9 @@ export function buildImagePdf(input: ImagePdfInput): Uint8Array {
 
   const pageIds = Array.from({ length: copies }, (_, i) => 5 + i * 2);
   add(['<< /Type /Catalog /Pages 2 0 R >>']);
-  add([`<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${copies} >>`]);
+  add([
+    `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${copies} >>`,
+  ]);
   add(
     streamObject(
       `<< /Type /XObject /Subtype /Image /Width ${input.imageWidth} /Height ${input.imageHeight}` +
@@ -93,11 +95,19 @@ export function buildImagePdf(input: ImagePdfInput): Uint8Array {
 
 export function makeImagePdfBlob(input: ImagePdfInput): Blob {
   const data = buildImagePdf(input);
-  const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+  const buffer = data.buffer.slice(
+    data.byteOffset,
+    data.byteOffset + data.byteLength,
+  ) as ArrayBuffer;
   return new Blob([buffer], { type: 'application/pdf' });
 }
 
 export function pdfFileName(name: string): string {
-  const base = name.trim().replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').slice(0, 80) || 'label';
+  const base =
+    name
+      .trim()
+      .replace(/[\\/:*?"<>|]+/g, '-')
+      .replace(/\s+/g, ' ')
+      .slice(0, 80) || 'label';
   return `${base}.pdf`;
 }

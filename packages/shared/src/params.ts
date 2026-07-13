@@ -1,7 +1,7 @@
 import type { LabelElement, ParamDef, TemplateDoc } from './types.js';
 
 // Unicode-aware: keys may be Chinese, e.g. {{品名}}. \p{L}=letters, \p{N}=numbers.
-const PLACEHOLDER = /\{\{\s*([\p{L}\p{N}_.\-]+)\s*\}\}/gu;
+const PLACEHOLDER = /\{\{\s*([\p{L}\p{N}_.-]+)\s*\}\}/gu;
 
 export interface Segment {
   kind: 'text' | 'param';

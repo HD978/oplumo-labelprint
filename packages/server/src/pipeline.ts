@@ -1,8 +1,15 @@
-import type { MediaProfile, PrintDelivery, PrintJobFormat, PrintRequest, PrintTargetConfig, TemplateDoc } from '@labelprint/shared';
-import { renderTemplate } from './render/raster.js';
+import type {
+  MediaProfile,
+  PrintDelivery,
+  PrintJobFormat,
+  PrintRequest,
+  PrintTargetConfig,
+  TemplateDoc,
+} from '@labelprint/shared';
 import { adapterForTarget } from './protocol/index.js';
-import { createTransport } from './transport/index.js';
+import { renderTemplate } from './render/raster.js';
 import type { Repos } from './store/repos.js';
+import { createTransport } from './transport/index.js';
 
 export interface PrintOutcome {
   ok: boolean;
@@ -108,7 +115,9 @@ export async function runPrint(req: PrintRequest, repos: Repos): Promise<PrintOu
     rendered.delivery === 'web-bluetooth' ||
     rendered.delivery === 'web-usb'
   ) {
-    throw new Error('This print target is handled by the web browser. Use the web UI to print with it.');
+    throw new Error(
+      'This print target is handled by the web browser. Use the web UI to print with it.',
+    );
   }
   const target = await resolveTarget(repos, req.targetId);
   const transport = createTransport(target);

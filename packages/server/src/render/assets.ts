@@ -15,7 +15,7 @@ let bwipPromise: Promise<BwipModule | null> | null = null;
 async function getBwip(): Promise<BwipModule | null> {
   if (!bwipPromise) {
     bwipPromise = import('bwip-js')
-      .then((m) => ((m as { default?: BwipModule }).default ?? (m as unknown as BwipModule)))
+      .then((m) => (m as { default?: BwipModule }).default ?? (m as unknown as BwipModule))
       .catch(() => null);
   }
   return bwipPromise;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { LabelElement } from '@labelprint/shared';
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
@@ -22,10 +23,17 @@ import {
   Type,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
-import type { LabelElement } from '@labelprint/shared';
-import IconButton from './IconButton.vue';
 import { t } from '../lib/i18n';
-import { addElement, align, deleteSelected, distribute, duplicateSelected, selectedElements, zorder } from '../lib/store';
+import {
+  addElement,
+  align,
+  deleteSelected,
+  distribute,
+  duplicateSelected,
+  selectedElements,
+  zorder,
+} from '../lib/store';
+import IconButton from './IconButton.vue';
 
 const adds = computed<{ type: LabelElement['type']; icon: typeof Type; label: string }[]>(() => [
   { type: 'text', icon: Type, label: t('toolbar.addText') },

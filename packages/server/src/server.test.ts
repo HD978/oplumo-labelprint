@@ -1,10 +1,10 @@
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
 import type { MediaProfile, TemplateDoc } from '@labelprint/shared';
-import { buildPrelude, buildTsplJob, packMonochrome } from './protocol/tspl.js';
+import { describe, expect, it } from 'vitest';
 import { effectiveMedia } from './pipeline.js';
+import { buildPrelude, buildTsplJob, packMonochrome } from './protocol/tspl.js';
 import { JsonlStore } from './store/jsonlStore.js';
 
 const media: MediaProfile = {
@@ -64,7 +64,12 @@ describe('buildPrelude', () => {
   });
 
   it('uses GAP 0 for continuous media', () => {
-    const p = buildPrelude({ media: { ...media, type: 'continuous' }, widthMm: 40, heightMm: 50, copies: 1 });
+    const p = buildPrelude({
+      media: { ...media, type: 'continuous' },
+      widthMm: 40,
+      heightMm: 50,
+      copies: 1,
+    });
     expect(p).toContain('GAP 0 mm,0 mm\r\n');
   });
 });
@@ -110,6 +115,8 @@ describe('JsonlStore', () => {
       { id: 'h1', value: 'old' },
       { id: 'h2', value: 'new' },
     ]);
-    expect(await readFile(jsonl, 'utf8')).toBe('{"id":"h1","value":"old"}\n{"id":"h2","value":"new"}\n');
+    expect(await readFile(jsonl, 'utf8')).toBe(
+      '{"id":"h1","value":"old"}\n{"id":"h2","value":"new"}\n',
+    );
   });
 });

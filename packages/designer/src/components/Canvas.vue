@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
 import type { LabelElement } from '@labelprint/shared';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { type Box, bboxOf, computeSnap, round1, snapToStep, translatePatch } from '../lib/geometry';
+import { t } from '../lib/i18n';
 import {
   clearSelection,
   designSvg,
@@ -10,8 +12,6 @@ import {
   toggleSelection,
   updateElement,
 } from '../lib/store';
-import { bboxOf, computeSnap, round1, snapToStep, translatePatch, type Box } from '../lib/geometry';
-import { t } from '../lib/i18n';
 
 const stageEl = ref<HTMLDivElement | null>(null);
 
@@ -165,7 +165,11 @@ function onMoveDrag(e: PointerEvent): void {
       dx = snapToStep(drag.value.primaryB.x + dx, state.view.gridStep) - drag.value.primaryB.x;
       dy = snapToStep(drag.value.primaryB.y + dy, state.view.gridStep) - drag.value.primaryB.y;
     }
-    const prop: Box = { ...drag.value.primaryB, x: drag.value.primaryB.x + dx, y: drag.value.primaryB.y + dy };
+    const prop: Box = {
+      ...drag.value.primaryB,
+      x: drag.value.primaryB.x + dx,
+      y: drag.value.primaryB.y + dy,
+    };
     const { candX, candY } = candidates();
     const snap = computeSnap(prop, candX, candY, 6 / pxPerMm.value);
     dx += snap.dx;
@@ -211,7 +215,8 @@ function onResizeDrag(e: PointerEvent): void {
   if (k.includes('s')) bottom = Math.max(py, top + MIN);
   const box: Box = { x: left, y: top, w: right - left, h: bottom - top };
 
-  if (el.type === 'qrcode') updateElement(el.id, { x: box.x, y: box.y, size: Math.max(box.w, box.h) });
+  if (el.type === 'qrcode')
+    updateElement(el.id, { x: box.x, y: box.y, size: Math.max(box.w, box.h) });
   else updateElement(el.id, { x: box.x, y: box.y, w: box.w, h: box.h });
 }
 

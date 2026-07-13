@@ -1,6 +1,6 @@
+import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import net from 'node:net';
-import { spawn } from 'node:child_process';
 import type { PrintTargetConfig } from '@labelprint/shared';
 
 export interface TransportResult {

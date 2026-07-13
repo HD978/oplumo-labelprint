@@ -92,7 +92,9 @@ interface EndpointChoice {
 
 const USB_PRINTER_CLASS = 0x07;
 
-export async function connectTsplWebUsb(target: PrintTargetConfig): Promise<WebUsbPrinterConnection> {
+export async function connectTsplWebUsb(
+  target: PrintTargetConfig,
+): Promise<WebUsbPrinterConnection> {
   const nav = navigator as UsbNavigatorLike;
   if (!nav.usb) throw new Error(t('print.webUsbUnsupported'));
 
@@ -124,18 +126,25 @@ export async function connectTsplWebUsb(target: PrintTargetConfig): Promise<WebU
       deviceInfo: deviceInfo(device),
       reused,
       async write(data: Uint8Array): Promise<WebUsbSendResult> {
-        await writeChunks(device, choice.endpointNumber, data, clampInt(target.webUsbChunkSize, 64, 65536, 16384));
+        await writeChunks(
+          device,
+          choice.endpointNumber,
+          data,
+          clampInt(target.webUsbChunkSize, 64, 65536, 16384),
+        );
         return { deviceName, bytes: data.byteLength };
       },
       async close(): Promise<void> {
         if (closed) return;
         closed = true;
-        if (claimedInterface != null) await device.releaseInterface(claimedInterface).catch(() => undefined);
+        if (claimedInterface != null)
+          await device.releaseInterface(claimedInterface).catch(() => undefined);
         if (device.opened) await device.close().catch(() => undefined);
       },
     };
   } catch (e) {
-    if (claimedInterface != null) await device.releaseInterface(claimedInterface).catch(() => undefined);
+    if (claimedInterface != null)
+      await device.releaseInterface(claimedInterface).catch(() => undefined);
     if (device.opened) await device.close().catch(() => undefined);
     throw e;
   }
@@ -150,7 +159,10 @@ function usbFilters(target: PrintTargetConfig): UsbDeviceFilterLike[] {
   return [{ classCode: clampInt(target.webUsbClassCode, 0, 255, USB_PRINTER_CLASS) }];
 }
 
-function findAuthorizedDevice(devices: UsbDeviceLike[], target: PrintTargetConfig): UsbDeviceLike | null {
+function findAuthorizedDevice(
+  devices: UsbDeviceLike[],
+  target: PrintTargetConfig,
+): UsbDeviceLike | null {
   const matches = devices.filter((device) => deviceMatchesTarget(device, target));
   if (target.webUsbSerialNumber) {
     return matches.find((device) => device.serialNumber === target.webUsbSerialNumber) ?? null;
@@ -160,13 +172,16 @@ function findAuthorizedDevice(devices: UsbDeviceLike[], target: PrintTargetConfi
 
 function deviceMatchesTarget(device: UsbDeviceLike, target: PrintTargetConfig): boolean {
   if (isFiniteInt(target.webUsbVendorId) && device.vendorId !== target.webUsbVendorId) return false;
-  if (isFiniteInt(target.webUsbProductId) && device.productId !== target.webUsbProductId) return false;
+  if (isFiniteInt(target.webUsbProductId) && device.productId !== target.webUsbProductId)
+    return false;
   if (target.webUsbSerialNumber && device.serialNumber !== target.webUsbSerialNumber) return false;
   return isFiniteInt(target.webUsbVendorId) || hasCompatibleClass(device, target);
 }
 
 function hasCompatibleClass(device: UsbDeviceLike, target: PrintTargetConfig): boolean {
-  const preferredClass = isFiniteInt(target.webUsbClassCode) ? target.webUsbClassCode : USB_PRINTER_CLASS;
+  const preferredClass = isFiniteInt(target.webUsbClassCode)
+    ? target.webUsbClassCode
+    : USB_PRINTER_CLASS;
   for (const config of device.configurations) {
     for (const iface of config.interfaces) {
       for (const alt of iface.alternates) {
@@ -185,19 +200,36 @@ function deviceInfo(device: UsbDeviceLike): WebUsbDeviceInfo {
   };
 }
 
-function chooseOutEndpoint(device: UsbDeviceLike, target: PrintTargetConfig): EndpointChoice | null {
+function chooseOutEndpoint(
+  device: UsbDeviceLike,
+  target: PrintTargetConfig,
+): EndpointChoice | null {
   const config = device.configuration;
   if (!config) return null;
-  const preferredClass = isFiniteInt(target.webUsbClassCode) ? target.webUsbClassCode : USB_PRINTER_CLASS;
+  const preferredClass = isFiniteInt(target.webUsbClassCode)
+    ? target.webUsbClassCode
+    : USB_PRINTER_CLASS;
   const choices: Array<EndpointChoice & { score: number }> = [];
 
   for (const iface of config.interfaces) {
-    if (isFiniteInt(target.webUsbInterfaceNumber) && iface.interfaceNumber !== target.webUsbInterfaceNumber) continue;
+    if (
+      isFiniteInt(target.webUsbInterfaceNumber) &&
+      iface.interfaceNumber !== target.webUsbInterfaceNumber
+    )
+      continue;
     for (const alt of iface.alternates) {
-      if (isFiniteInt(target.webUsbAlternateSetting) && alt.alternateSetting !== target.webUsbAlternateSetting) continue;
+      if (
+        isFiniteInt(target.webUsbAlternateSetting) &&
+        alt.alternateSetting !== target.webUsbAlternateSetting
+      )
+        continue;
       for (const ep of alt.endpoints) {
         if (ep.direction !== 'out') continue;
-        if (isFiniteInt(target.webUsbEndpointNumber) && ep.endpointNumber !== target.webUsbEndpointNumber) continue;
+        if (
+          isFiniteInt(target.webUsbEndpointNumber) &&
+          ep.endpointNumber !== target.webUsbEndpointNumber
+        )
+          continue;
         if (ep.type !== 'bulk' && ep.type !== 'interrupt') continue;
         const classScore = alt.interfaceClass === preferredClass ? 0 : 10;
         const typeScore = ep.type === 'bulk' ? 0 : 1;
@@ -224,7 +256,8 @@ async function writeChunks(
   for (let offset = 0; offset < data.byteLength; offset += chunkSize) {
     const chunk = data.subarray(offset, offset + chunkSize);
     const result = await device.transferOut(endpointNumber, arrayBufferFrom(chunk));
-    if (result.status === 'stall') await device.clearHalt?.('out', endpointNumber).catch(() => undefined);
+    if (result.status === 'stall')
+      await device.clearHalt?.('out', endpointNumber).catch(() => undefined);
     if (result.status !== 'ok') {
       throw new Error(t('print.webUsbTransferFailed', { status: result.status }));
     }

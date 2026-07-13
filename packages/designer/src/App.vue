@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
 import { TooltipProvider } from 'reka-ui';
-import { initHashRouting, loadAll, state } from './lib/store';
-import TopBar from './components/TopBar.vue';
+import { onMounted } from 'vue';
 import ConfirmHost from './components/ConfirmHost.vue';
-import TemplatesView from './views/TemplatesView.vue';
+import TopBar from './components/TopBar.vue';
+import { initHashRouting, loadAll, state } from './lib/store';
 import DesignView from './views/DesignView.vue';
-import PrintView from './views/PrintView.vue';
 import HistoryView from './views/HistoryView.vue';
+import PrintView from './views/PrintView.vue';
+import TemplatesView from './views/TemplatesView.vue';
 
 onMounted(() => {
   initHashRouting();

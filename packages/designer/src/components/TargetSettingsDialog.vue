@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { GripVertical, Plus, Trash2, X } from 'lucide-vue-next';
 import type { PrintDelivery, PrintJobFormat, PrintTargetConfig } from '@labelprint/shared';
+import { GripVertical, Plus, Trash2, X } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import { confirmDialog } from '../lib/confirm';
 import { t } from '../lib/i18n';
 import { removeTarget, saveTarget, saveTargetOrder, state } from '../lib/store';
 
 const props = defineProps<{ open: boolean }>();
-const emit = defineEmits<{ (e: 'close'): void }>();
+const emit = defineEmits<(e: 'close') => void>();
 
 const selectedId = ref('');
 const draft = ref<PrintTargetConfig>(blankTarget());
@@ -125,7 +125,8 @@ function presetFor(target: Pick<PrintTargetConfig, 'format' | 'delivery'>): Targ
   if (target.format === 'pdf' && target.delivery === 'download') return 'pdf-download';
   if (target.format === 'browser-print-page') return 'browser-print';
   if (target.format === 'tspl-bitmap' && target.delivery === 'download') return 'tspl-download';
-  if (target.format === 'tspl-bitmap' && target.delivery === 'web-bluetooth') return 'web-bluetooth';
+  if (target.format === 'tspl-bitmap' && target.delivery === 'web-bluetooth')
+    return 'web-bluetooth';
   if (target.format === 'tspl-bitmap' && target.delivery === 'web-usb') return 'web-usb';
   if (target.delivery === 'usb') return 'usb';
   if (target.delivery === 'cups') return 'cups';
@@ -159,9 +160,13 @@ function applyPreset(preset: TargetPreset): void {
   draft.value = next;
 }
 
-function presetFormatDelivery(preset: TargetPreset): { format: PrintJobFormat; delivery: PrintDelivery } {
+function presetFormatDelivery(preset: TargetPreset): {
+  format: PrintJobFormat;
+  delivery: PrintDelivery;
+} {
   if (preset === 'pdf-download') return { format: 'pdf', delivery: 'download' };
-  if (preset === 'browser-print') return { format: 'browser-print-page', delivery: 'browser-dialog' };
+  if (preset === 'browser-print')
+    return { format: 'browser-print-page', delivery: 'browser-dialog' };
   if (preset === 'tspl-download') return { format: 'tspl-bitmap', delivery: 'download' };
   if (preset === 'web-bluetooth') return { format: 'tspl-bitmap', delivery: 'web-bluetooth' };
   if (preset === 'web-usb') return { format: 'tspl-bitmap', delivery: 'web-usb' };

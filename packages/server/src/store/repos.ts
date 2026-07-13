@@ -1,17 +1,19 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { PrintRecord, PrintTargetConfig, TemplateDoc } from '@labelprint/shared';
-import { JsonStore } from './jsonStore.js';
-import { JsonlStore } from './jsonlStore.js';
-import { DirStore, type Store } from './dirStore.js';
 import { config } from '../config.js';
+import { DirStore, type Store } from './dirStore.js';
+import { JsonlStore } from './jsonlStore.js';
+import { JsonStore } from './jsonStore.js';
 import { seedTargets, seedTemplates } from './seed.js';
 
 export interface Repos {
   // Templates: one file per template (data/templates/<id>.json) — a bad write or a
   // corrupt file affects only that template, not the whole library.
   templates: Store<TemplateDoc>;
-  targets: Store<PrintTargetConfig> & { replaceAll(items: PrintTargetConfig[]): Promise<PrintTargetConfig[]> };
+  targets: Store<PrintTargetConfig> & {
+    replaceAll(items: PrintTargetConfig[]): Promise<PrintTargetConfig[]>;
+  };
   history: JsonlStore<PrintRecord>;
 }
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { DEFAULT_FONT } from '@labelprint/shared';
+import { computed } from 'vue';
+import { bboxOf } from '../lib/geometry';
 import { mediaTypeLabel, t } from '../lib/i18n';
 import { selectedElements, setMediaGeometry, state, updateElement } from '../lib/store';
-import { bboxOf } from '../lib/geometry';
 
 const CUSTOM_FONT = '__custom__';
 const knownFonts = computed(() => new Set([DEFAULT_FONT, ...state.fonts]));
@@ -26,6 +26,7 @@ function onFontSelect(id: string, ev: Event): void {
 const single = computed(() => selectedElements.value.length === 1);
 // Cast to any: the property panel reads/writes a heterogeneous union; v-if on el.type
 // guards which fields are shown. Editing always goes through updateElement.
+// biome-ignore lint/suspicious/noExplicitAny: deliberate escape hatch, see above
 const el = computed<any>(() => (single.value ? selectedElements.value[0] : null));
 const bb = computed(() => (el.value ? bboxOf(el.value) : null));
 
@@ -34,7 +35,9 @@ function num(id: string, key: string, e: Event): void {
   if (!Number.isNaN(v)) updateElement(id, { [key]: v } as never);
 }
 function str(id: string, key: string, e: Event): void {
-  updateElement(id, { [key]: (e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).value } as never);
+  updateElement(id, {
+    [key]: (e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).value,
+  } as never);
 }
 function bool(id: string, key: string, e: Event): void {
   updateElement(id, { [key]: (e.target as HTMLInputElement).checked } as never);

@@ -1,5 +1,5 @@
-import { Resvg } from '@resvg/resvg-js';
 import { compileToSvg, dotsPerMm, type TemplateDoc } from '@labelprint/shared';
+import { Resvg } from '@resvg/resvg-js';
 import { buildAssets } from './assets.js';
 
 /**

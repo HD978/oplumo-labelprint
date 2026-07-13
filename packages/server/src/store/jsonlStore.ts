@@ -31,7 +31,9 @@ export class JsonlStore<T extends { id: string }> {
       await fs.mkdir(path.dirname(this.file), { recursive: true });
       const lines = parsed.map((item) => JSON.stringify(item)).join('\n');
       await fs.writeFile(this.file, lines ? `${lines}\n` : '', 'utf8');
-      await fs.rename(this.legacyJsonFile, `${this.legacyJsonFile}.migrated`).catch(() => undefined);
+      await fs
+        .rename(this.legacyJsonFile, `${this.legacyJsonFile}.migrated`)
+        .catch(() => undefined);
     } catch (e: unknown) {
       if ((e as NodeJS.ErrnoException)?.code === 'ENOENT') return;
       throw e;

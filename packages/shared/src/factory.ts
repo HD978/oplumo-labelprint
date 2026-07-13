@@ -19,7 +19,8 @@ export function newId(prefix = 'el'): string {
 
 // Cross-platform CJK stack: macOS resolves PingFang; Linux (fonts-noto-cjk) resolves
 // "Noto Sans CJK SC"; the trailing sans-serif is mapped to a CJK family by the server.
-export const DEFAULT_FONT = 'Noto Sans SC, Noto Sans CJK SC, PingFang SC, Microsoft YaHei, sans-serif';
+export const DEFAULT_FONT =
+  'Noto Sans SC, Noto Sans CJK SC, PingFang SC, Microsoft YaHei, sans-serif';
 
 export function defaultText(x = 2, y = 2): TextElement {
   return {
@@ -48,7 +49,17 @@ export function defaultBox(x = 2, y = 2): BoxElement {
 }
 
 export function defaultBarcode(x = 2, y = 2): BarcodeElement {
-  return { id: newId('bc'), type: 'barcode', x, y, w: 40, h: 12, symbology: 'code128', value: '{{barcode}}', showText: true };
+  return {
+    id: newId('bc'),
+    type: 'barcode',
+    x,
+    y,
+    w: 40,
+    h: 12,
+    symbology: 'code128',
+    value: '{{barcode}}',
+    showText: true,
+  };
 }
 
 export function defaultQrcode(x = 2, y = 2): QrcodeElement {
@@ -68,7 +79,16 @@ export function makeElement(type: LabelElement['type']): LabelElement {
     case 'qrcode':
       return defaultQrcode();
     case 'image':
-      return { id: newId('img'), type: 'image', x: 2, y: 2, w: 14, h: 14, src: '{{image}}', fit: 'contain' };
+      return {
+        id: newId('img'),
+        type: 'image',
+        x: 2,
+        y: 2,
+        w: 14,
+        h: 14,
+        src: '{{image}}',
+        fit: 'contain',
+      };
   }
 }
 

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Grid3x3, Magnet, Maximize2, Plus, Save, ZoomIn, ZoomOut } from 'lucide-vue-next';
 import { defaultMediaProfiles } from '@labelprint/shared';
-import IconButton from '../components/IconButton.vue';
-import Toolbar from '../components/Toolbar.vue';
+import { Grid3x3, Magnet, Maximize2, Plus, Save, ZoomIn, ZoomOut } from 'lucide-vue-next';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import LabelCanvas from '../components/Canvas.vue';
-import PropertyPanel from '../components/PropertyPanel.vue';
+import IconButton from '../components/IconButton.vue';
 import ParamDefsPanel from '../components/ParamDefsPanel.vue';
+import PropertyPanel from '../components/PropertyPanel.vue';
 import ResizeBar from '../components/ResizeBar.vue';
+import Toolbar from '../components/Toolbar.vue';
 import { t } from '../lib/i18n';
 import { newTemplate, save, state } from '../lib/store';
 
@@ -42,7 +42,9 @@ function applyFitZoom(): void {
   if (scroll.clientWidth <= 0 || scroll.clientHeight <= 0) return;
   const availableW = Math.max(1, scroll.clientWidth - CANVAS_PAD);
   const availableH = Math.max(1, scroll.clientHeight - CANVAS_PAD);
-  const fit = Math.floor(Math.min(availableW / state.doc.media.widthMm, availableH / state.doc.media.heightMm));
+  const fit = Math.floor(
+    Math.min(availableW / state.doc.media.widthMm, availableH / state.doc.media.heightMm),
+  );
   state.view.pxPerMm = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fit));
 }
 

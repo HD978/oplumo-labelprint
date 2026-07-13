@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { RefreshCw, RotateCcw, Trash2 } from 'lucide-vue-next';
-import { clearHistory, deleteHistoryItem, loadHistory, reprintFrom, state } from '../lib/store';
 import { confirmDialog } from '../lib/confirm';
 import { formatDateTime, t } from '../lib/i18n';
+import { clearHistory, deleteHistoryItem, loadHistory, reprintFrom, state } from '../lib/store';
 
 async function onClear(): Promise<void> {
   const ok = await confirmDialog({

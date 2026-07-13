@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Component } from 'vue';
 import { TooltipArrow, TooltipContent, TooltipPortal, TooltipRoot, TooltipTrigger } from 'reka-ui';
+import type { Component } from 'vue';
 
 defineProps<{
   icon: Component;
@@ -10,7 +10,7 @@ defineProps<{
   danger?: boolean;
   size?: number;
 }>();
-defineEmits<{ (e: 'click'): void }>();
+defineEmits<(e: 'click') => void>();
 </script>
 
 <template>

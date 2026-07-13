@@ -4,6 +4,14 @@
   "version": "0.1.0",
   "description": "Parameterized thermal label design and printing system with a visual mm-precise designer, REST API, and pluggable print pipeline.",
   "license": "MIT",
+  "homepage": "https://github.com/xingrz/labelprint#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xingrz/labelprint.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xingrz/labelprint/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -19,6 +27,11 @@
     "dev:designer": "npm run dev -w @labelprint/designer",
     "start": "node packages/server/dist/index.js",
     "test": "npm run test -w @labelprint/shared && npm run test -w @labelprint/server",
-    "typecheck": "tsc -b --noEmit packages/shared packages/server"
+    "typecheck": "tsc -b --noEmit packages/shared packages/server",
+    "lint": "biome check .",
+    "format": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.3"
   }
 }

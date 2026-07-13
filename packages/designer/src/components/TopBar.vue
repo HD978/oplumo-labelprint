@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { History, Languages, LayoutGrid, Moon, PenTool, Printer, Tag, Wifi } from 'lucide-vue-next';
 import { computed } from 'vue';
-import { i18nState, setLocaleChoice, t, type LocaleChoice } from '../lib/i18n';
-import { setThemeChoice, themeState, type ThemeChoice } from '../lib/theme';
+import { i18nState, type LocaleChoice, setLocaleChoice, t } from '../lib/i18n';
 import { setActiveView, state, type ViewName } from '../lib/store';
+import { setThemeChoice, type ThemeChoice, themeState } from '../lib/theme';
 
 const tabs = computed<{ id: ViewName; label: string; icon: typeof PenTool }[]>(() => [
   { id: 'templates', label: t('nav.templates'), icon: LayoutGrid },

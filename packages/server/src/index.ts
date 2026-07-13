@@ -1,10 +1,10 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
+import Fastify from 'fastify';
+import { registerApi } from './api/routes.js';
 import { config } from './config.js';
 import { seedAll } from './store/repos.js';
-import { registerApi } from './api/routes.js';
 
 async function main(): Promise<void> {
   await fs.mkdir(config.dataDir, { recursive: true });

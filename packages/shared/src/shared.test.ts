@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { dotsPerMm, mmToDot, ptToMm, widthInDots } from './units.js';
-import { applyParams, collectParams, extractKeys } from './params.js';
 import { compileToSvg } from './compiler.js';
+import { applyParams, collectParams, extractKeys } from './params.js';
 import type { TemplateDoc } from './types.js';
+import { dotsPerMm, mmToDot, ptToMm, widthInDots } from './units.js';
 
 describe('units', () => {
   it('203dpi => exactly 8 dots/mm (integer-dpmm thermal convention)', () => {
@@ -70,7 +70,9 @@ describe('params', () => {
     expect(applyParams('品名：{{品名}}', { 品名: '牛奶' }, doc)).toBe('品名：牛奶');
   });
   it('onEmpty:token keeps unfilled placeholders visible (design mode)', () => {
-    expect(applyParams('批次：{{batch}}', undefined, doc, { onEmpty: 'token' })).toBe('批次：{{batch}}');
+    expect(applyParams('批次：{{batch}}', undefined, doc, { onEmpty: 'token' })).toBe(
+      '批次：{{batch}}',
+    );
     // a resolved value still substitutes
     expect(applyParams('数量：{{qty}}', undefined, doc, { onEmpty: 'token' })).toBe('数量：1');
   });
@@ -105,7 +107,9 @@ describe('compiler', () => {
   it('renders dashed lines with stroke-dasharray', () => {
     const dashed: TemplateDoc = {
       ...doc,
-      elements: [{ id: 'l', type: 'line', x: 0, y: 0, x2: 10, y2: 0, strokeMm: 0.3, dash: [1, 0.6] }],
+      elements: [
+        { id: 'l', type: 'line', x: 0, y: 0, x2: 10, y2: 0, strokeMm: 0.3, dash: [1, 0.6] },
+      ],
     };
     expect(compileToSvg(dashed)).toContain('stroke-dasharray="1,0.6"');
   });

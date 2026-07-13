@@ -1,5 +1,5 @@
-import { computed, reactive, ref, watchEffect } from 'vue';
 import type { MediaType } from '@labelprint/shared';
+import { computed, reactive, ref, watchEffect } from 'vue';
 
 export type Locale = 'en' | 'zh-CN';
 export type LocaleChoice = 'auto' | Locale;
@@ -58,7 +58,8 @@ const messages = {
     'media.gap': 'Gap-sensed',
     'media.blackmark': 'Black-mark',
     'templates.title': 'Templates',
-    'templates.description': 'Choose a template to design, or duplicate an existing size for a quick variant.',
+    'templates.description':
+      'Choose a template to design, or duplicate an existing size for a quick variant.',
     'templates.new': 'New template',
     'templates.empty': 'No templates yet. Start with New template.',
     'templates.deleteTitle': 'Delete "{name}"?',
@@ -249,10 +250,13 @@ const messages = {
     'targets.dragReorder': 'Drag to reorder',
     'targets.orderSaved': 'Target order saved',
     'targets.orderFailed': 'Order failed: {message}',
-    'targets.browserTargetNote': 'Handled by the browser on this device. No server printer configuration is required.',
+    'targets.browserTargetNote':
+      'Handled by the browser on this device. No server printer configuration is required.',
     'targets.tsplDownloadNote': 'Downloads raw TSPL bytes for debugging or manual raw printing.',
-    'targets.webBluetoothNote': 'Generates TSPL on the server, then sends the raw bytes through Web Bluetooth from this browser.',
-    'targets.webUsbNote': 'Generates TSPL on the server, then sends the raw bytes to a USB bulk OUT endpoint through WebUSB.',
+    'targets.webBluetoothNote':
+      'Generates TSPL on the server, then sends the raw bytes through Web Bluetooth from this browser.',
+    'targets.webUsbNote':
+      'Generates TSPL on the server, then sends the raw bytes to a USB bulk OUT endpoint through WebUSB.',
     'targetTypes.pdfDownload': 'PDF download',
     'targetTypes.browserPrint': 'Browser print',
     'targetTypes.tsplDownload': 'TSPL download',
@@ -509,7 +513,8 @@ const messages = {
     'targets.browserTargetNote': '由当前浏览器处理，不需要配置服务端打印设备。',
     'targets.tsplDownloadNote': '下载原始 TSPL 指令，用于调试或手动 raw 打印。',
     'targets.webBluetoothNote': '服务端生成 TSPL，再由当前浏览器通过 Web Bluetooth 发送原始字节。',
-    'targets.webUsbNote': '服务端生成 TSPL，再由当前浏览器通过 WebUSB 发送到 USB bulk OUT endpoint。',
+    'targets.webUsbNote':
+      '服务端生成 TSPL，再由当前浏览器通过 WebUSB 发送到 USB bulk OUT endpoint。',
     'targetTypes.pdfDownload': 'PDF 下载',
     'targetTypes.browserPrint': '浏览器打印',
     'targetTypes.tsplDownload': 'TSPL 下载',
@@ -554,7 +559,7 @@ export function t(key: MessageKey, vars: Record<string, string | number> = {}): 
   const table = messages[currentLocale.value] as Record<string, string>;
   const fallback = messages.en as Record<string, string>;
   return (table[key] ?? fallback[key] ?? key).replace(/\{(\w+)\}/g, (_, name: string) =>
-    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : `{${name}}`,
+    Object.hasOwn(vars, name) ? String(vars[name]) : `{${name}}`,
   );
 }
 
