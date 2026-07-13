@@ -1,7 +1,8 @@
 # Production: one image, the server serves the built designer SPA. Headless, intranet.
 #   docker compose -f compose.deploy.yml up --build -d      ->  http://<host>:5179
 #
-# For a Swarm/Traefik deploy, swap `build` for a pushed `image:` and add deploy labels.
+# Prefer the prebuilt image unless you need local changes:
+#   image: ghcr.io/xingrz/labelprint:latest   (drop the `build:` block)
 services:
   labelprint:
     build:

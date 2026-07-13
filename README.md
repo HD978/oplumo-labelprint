@@ -1,6 +1,10 @@
 # LabelPrint
 
-![screenshot](./screenshot.png)
+[![CI](https://github.com/xingrz/labelprint/actions/workflows/ci.yml/badge.svg)](https://github.com/xingrz/labelprint/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/xingrz/labelprint)](https://github.com/xingrz/labelprint/releases)
+[![License](https://img.shields.io/github/license/xingrz/labelprint)](./LICENSE)
+
+![screenshot](./screenshot.webp)
 
 LabelPrint is a self-hosted web app for designing and printing parameterized
 thermal labels.
@@ -27,7 +31,34 @@ The bundled server-side hardware backend currently generates TSPL bitmap jobs.
 The print pipeline is protocol-oriented, so other output backends can be added
 without changing how users design templates.
 
-## Quick Start
+## Quick Start (Docker)
+
+Prebuilt multi-arch images (amd64/arm64) are published to GitHub Container
+Registry on every release:
+
+```yaml
+# compose.yml
+services:
+  labelprint:
+    image: ghcr.io/xingrz/labelprint:latest
+    restart: unless-stopped
+    ports:
+      - 5179:5179
+    volumes:
+      - ./data:/data
+```
+
+```bash
+docker compose up -d
+```
+
+Open:
+
+```text
+http://<host>:5179
+```
+
+## Quick Start (from source)
 
 Requirements:
 
@@ -78,10 +109,12 @@ http://localhost:5173
 The designer runs through Vite and proxies API calls to the server container. If
 you change shared package code, restart the server container.
 
-## Production Docker
+## Production Docker (build from source)
 
-The deployment compose file builds a single runtime image. The server serves the
-web app and API from one port:
+Prefer the prebuilt image in [Quick Start (Docker)](#quick-start-docker) unless
+you need local modifications. The deployment compose file builds the same
+single runtime image from source. The server serves the web app and API from
+one port:
 
 ```bash
 docker compose -f compose.deploy.yml up --build -d
@@ -164,12 +197,22 @@ npm run dev
 npm run dev:designer
 ```
 
-Run checks:
+Run the same checks as CI:
 
 ```bash
+npm run lint
 npm run build
+npm run typecheck
 npm test
 ```
+
+Formatting and linting are handled by [Biome](https://biomejs.dev/); run
+`npm run format` to auto-fix. Every push and pull request runs these checks in
+GitHub Actions, plus a Docker image build.
+
+Releases are cut by pushing a `vX.Y.Z` tag: the release workflow publishes a
+multi-arch image to `ghcr.io/xingrz/labelprint` and creates a GitHub Release.
+Notable changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 Implementation notes for coding agents and maintainers live in
 [AGENTS.md](AGENTS.md).
