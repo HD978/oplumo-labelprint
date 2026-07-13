@@ -1,15 +1,16 @@
 # Production: one image, the server serves the built designer SPA. Headless, intranet.
-#   docker compose -f compose.deploy.yml up --build -d      ->  http://<host>:5179
+#   docker compose -f compose.deploy.yml up -d      ->  http://<host>:5179
 #
-# Prefer the prebuilt image unless you need local changes:
-#   image: ghcr.io/xingrz/labelprint:latest   (drop the `build:` block)
+# Uses the prebuilt multi-arch image from GHCR. To build from source instead
+# (local modifications), swap `image:` for the `build:` block below and run
+# with --build.
 services:
   labelprint:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: runtime
-    image: labelprint:latest
+    image: ghcr.io/xingrz/labelprint:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   target: runtime
     container_name: labelprint
     restart: unless-stopped
     ports:

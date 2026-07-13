@@ -109,16 +109,19 @@ http://localhost:5173
 The designer runs through Vite and proxies API calls to the server container. If
 you change shared package code, restart the server container.
 
-## Production Docker (build from source)
+## Production Docker
 
-Prefer the prebuilt image in [Quick Start (Docker)](#quick-start-docker) unless
-you need local modifications. The deployment compose file builds the same
-single runtime image from source. The server serves the web app and API from
-one port:
+The bundled deployment compose file runs the prebuilt image with the same
+layout as the Quick Start snippet, plus commented examples for USB and CUPS
+printer wiring. The server serves the web app and API from one port:
 
 ```bash
-docker compose -f compose.deploy.yml up --build -d
+docker compose -f compose.deploy.yml up -d
 ```
+
+To build the image from source instead (for local modifications), swap the
+`image:` line in `compose.deploy.yml` for the commented `build:` block and run
+with `--build`.
 
 Open:
 

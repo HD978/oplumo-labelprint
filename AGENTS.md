@@ -178,6 +178,8 @@ matches the target path:
 
 ```bash
 docker compose up --build
+# compose.deploy.yml runs the published GHCR image; to verify a local build,
+# swap `image:` for its commented `build:` block first, then:
 docker compose -f compose.deploy.yml up --build -d
 ```
 
