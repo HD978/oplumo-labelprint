@@ -77,6 +77,20 @@ Open:
 http://localhost:5179
 ```
 
+## Windows Local Test (OPLUMO)
+
+Install Node.js 20 or newer, then run `start-windows.ps1` in PowerShell from
+the repository folder. The script installs dependencies when needed, builds
+the app, binds the server to `127.0.0.1`, and starts it at
+`http://127.0.0.1:5179`. Templates and print history are stored in the local
+`data/` folder. The browser print target uses the Windows print dialog; choose
+the installed label printer and configure its matching die-cut media there.
+
+For this fork, the New Template action defaults to the Verrona 40×20 mm gap
+label. The designer also includes 70×50 mm and 100×150 mm gap media presets as
+well as the upstream sizes. Existing template width and height controls remain
+available for other die-cut sizes.
+
 ## Basic Workflow
 
 1. Create or open a template.
