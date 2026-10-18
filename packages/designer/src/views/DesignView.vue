@@ -39,7 +39,7 @@ async function importReference(e: Event): Promise<void> {
   referenceError.value = '';
   if (!file || !state.doc) return;
   if (file.size > 20 * 1024 * 1024) {
-    referenceError.value = 'Reference file must be 20 MB or smaller.';
+    referenceError.value = t('design.referenceFileTooLarge');
     return;
   }
   try {
@@ -58,7 +58,7 @@ async function importReference(e: Event): Promise<void> {
       canvas.width = Math.ceil(viewport.width);
       canvas.height = Math.ceil(viewport.height);
       const context = canvas.getContext('2d');
-      if (!context) throw new Error('Could not render the PDF page.');
+      if (!context) throw new Error(t('design.referenceReadFailed'));
       await page.render({ canvasContext: context, viewport }).promise;
       dataUrl = canvas.toDataURL('image/png');
     } else if (file.type.startsWith('image/')) {
@@ -67,15 +67,15 @@ async function importReference(e: Event): Promise<void> {
         reader.onload = () =>
           typeof reader.result === 'string'
             ? resolve(reader.result)
-            : reject(new Error('Could not read image.'));
-        reader.onerror = () => reject(new Error('Could not read image.'));
+            : reject(new Error(t('design.referenceReadFailed')));
+        reader.onerror = () => reject(new Error(t('design.referenceReadFailed')));
         reader.readAsDataURL(file);
       });
-    } else throw new Error('Choose an image or PDF file.');
+    } else throw new Error(t('design.referenceChooseFile'));
     state.doc.referenceImage = { dataUrl, opacity: 0.35, name: file.name };
     state.dirty = true;
   } catch (error) {
-    referenceError.value = error instanceof Error ? error.message : 'Could not import reference.';
+    referenceError.value = error instanceof Error ? error.message : t('design.referenceReadFailed');
   }
 }
 function onReferenceOpacity(e: Event): void {
@@ -157,11 +157,11 @@ onBeforeUnmount(() => fitObserver?.disconnect());
       </div>
       <div class="command-group reference-tools">
         <input ref="referenceInput" class="reference-file" type="file" accept="image/*,application/pdf,.pdf" @change="importReference" />
-        <IconButton :icon="FileImage" :label="state.doc?.referenceImage ? 'Replace reference' : 'Import reference image or PDF'" @click="referenceInput?.click()" />
+        <IconButton :icon="FileImage" :label="state.doc?.referenceImage ? t('design.referenceReplace') : t('design.referenceImport')" @click="referenceInput?.click()" />
         <template v-if="state.doc?.referenceImage">
           <span class="reference-name" :title="state.doc.referenceImage.name">{{ state.doc.referenceImage.name || 'Reference layer' }}</span>
-          <label class="reference-opacity" title="Reference opacity"><input type="range" min="0.05" max="1" step="0.05" :value="state.doc.referenceImage.opacity" @input="onReferenceOpacity" /></label>
-          <IconButton :icon="Trash2" label="Remove reference" @click="removeReference" />
+          <label class="reference-opacity" :title="t('design.referenceOpacity')"><input type="range" min="0.05" max="1" step="0.05" :value="state.doc.referenceImage.opacity" @input="onReferenceOpacity" /></label>
+          <IconButton :icon="Trash2" :label="t('design.referenceRemove')" @click="removeReference" />
         </template>
       </div>
       <span v-if="referenceError" class="reference-error">{{ referenceError }}</span>
