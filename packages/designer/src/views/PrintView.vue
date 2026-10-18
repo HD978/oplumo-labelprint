@@ -63,6 +63,9 @@ let ro: ResizeObserver | undefined;
 const MIN_PREVIEW_ZOOM = 2;
 const MAX_PREVIEW_ZOOM = 160;
 const PREVIEW_ZOOM_STEP = 4;
+// Screen previews and PDFs use a high-resolution raster. Physical TSPL jobs continue
+// to render at the printer's configured DPI in the server print pipeline.
+const PREVIEW_DPI = 600;
 const fitPreviewPxPerMm = computed(() => {
   const tmpl = printTemplate.value;
   if (!tmpl) return 8;
@@ -172,9 +175,11 @@ function normalizeOrigin(input: string): string {
 function printPath(targetId: string, templateId: string, copies: number): string {
   return `/api/targets/${encodeURIComponent(targetId)}/templates/${encodeURIComponent(templateId)}/print?copies=${encodeURIComponent(copies || 1)}`;
 }
-function previewPath(targetId: string | undefined, templateId: string): string {
-  if (!targetId) return `/api/templates/${encodeURIComponent(templateId)}/preview`;
-  return `/api/targets/${encodeURIComponent(targetId)}/templates/${encodeURIComponent(templateId)}/preview`;
+function previewPath(targetId: string | undefined, templateId: string, dpi = PREVIEW_DPI): string {
+  const path = !targetId
+    ? `/api/templates/${encodeURIComponent(templateId)}/preview`
+    : `/api/targets/${encodeURIComponent(targetId)}/templates/${encodeURIComponent(templateId)}/preview`;
+  return `${path}?dpi=${dpi}`;
 }
 function renderJobPath(targetId: string, templateId: string, copies: number): string {
   return `/api/targets/${encodeURIComponent(targetId)}/templates/${encodeURIComponent(templateId)}/render-job?copies=${encodeURIComponent(copies || 1)}`;
