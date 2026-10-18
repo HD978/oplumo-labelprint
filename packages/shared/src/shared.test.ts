@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { compileToSvg } from './compiler.js';
+import { defaultMediaProfiles } from './factory.js';
 import { applyParams, collectParams, extractKeys } from './params.js';
 import type { TemplateDoc } from './types.js';
 import { dotsPerMm, mmToDot, ptToMm, widthInDots } from './units.js';
@@ -17,6 +18,17 @@ describe('units', () => {
   });
   it('pt -> mm', () => {
     expect(ptToMm(72)).toBeCloseTo(25.4, 5);
+  });
+});
+
+describe('Verrona media presets', () => {
+  it.each([
+    ['m_verrona_40x20_gap', 40, 20],
+    ['m_70x50_gap', 70, 50],
+    ['m_100x150_gap', 100, 150],
+  ])('defines %s at %s×%s mm', (id, widthMm, heightMm) => {
+    const profile = defaultMediaProfiles().find((item) => item.id === id);
+    expect(profile).toMatchObject({ widthMm, heightMm, type: 'gap' });
   });
 });
 
