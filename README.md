@@ -79,9 +79,9 @@ http://localhost:5179
 
 ## Windows Local Test (OPLUMO)
 
-Install Node.js 20 or newer, then run `start-windows.ps1` in PowerShell from
-the repository folder. The script installs dependencies when needed, builds
-the app, binds the server to `127.0.0.1`, and starts it at
+Install Node.js 20 or newer, then double-click `start-windows.cmd` in the
+repository folder. It opens a persistent PowerShell window, installs dependencies
+when needed, builds the app, binds the server to `127.0.0.1`, and starts it at
 `http://127.0.0.1:5179`. Templates and print history are stored in the local
 `data/` folder. The browser print target uses the Windows print dialog; choose
 the installed label printer and configure its matching die-cut media there.
@@ -121,6 +121,11 @@ In Design, import a PNG/JPEG image or PDF as a reference layer. PDF import uses
 the first page. The reference can be faded or removed and is saved with the
 template, but it is excluded from preview exports and print output; recreate
 the text, ingredients, barcodes, and geometry with editable designer elements.
+
+Screen previews and downloaded PDFs render at up to 600 DPI for clearer zooming.
+Thermal printer jobs use the selected printer target's DPI (commonly 203 DPI),
+which is the hardware's output resolution. The PDF embeds a high-resolution
+raster image rather than vector text.
 
 The Templates page also has an action to add 12 editable 40×20 mm Verrona
 drafts based on the product filenames visible in the supplied screenshots.
