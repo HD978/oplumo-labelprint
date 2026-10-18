@@ -62,6 +62,9 @@ const messages = {
       'Choose a template to design, or duplicate an existing size for a quick variant.',
     'templates.new': 'New template',
     'templates.empty': 'No templates yet. Start with New template.',
+    'templates.verronaImport': 'Add 12 Verrona 40×20 drafts',
+    'templates.verronaImported':
+      'Added {count} Verrona 40×20 draft templates. Verify ingredients and barcode before production.',
     'templates.deleteTitle': 'Delete "{name}"?',
     'templates.deleteMessage': 'This action cannot be undone.',
     'design.currentTemplate': 'Current template',
@@ -336,6 +339,9 @@ const messages = {
     'templates.description': '选择一个模板进入设计，或复制现有规格快速改版。',
     'templates.new': '新建模板',
     'templates.empty': '还没有模板。点「新建模板」开始。',
+    'templates.verronaImport': '添加 12 款 Verrona 40×20 草稿',
+    'templates.verronaImported':
+      '已添加 {count} 款 Verrona 40×20 模板草稿。生产前请核对配料和条码。',
     'templates.deleteTitle': '删除模板「{name}」？',
     'templates.deleteMessage': '此操作不可撤销。',
     'design.currentTemplate': '当前模板',
