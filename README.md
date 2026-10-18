@@ -122,6 +122,12 @@ the first page. The reference can be faded or removed and is saved with the
 template, but it is excluded from preview exports and print output; recreate
 the text, ingredients, barcodes, and geometry with editable designer elements.
 
+The Templates page also has an action to add 12 editable 40×20 mm Verrona
+drafts based on the product filenames visible in the supplied screenshots.
+They reproduce the visible product-name / best-before layout only. Ingredient
+text, barcode values, and final production content must be verified and added
+before printing.
+
 ## Docker Development
 
 Docker is useful when you want the same Linux font and rendering environment as
