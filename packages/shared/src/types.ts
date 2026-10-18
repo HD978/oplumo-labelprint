@@ -136,6 +136,8 @@ export interface TemplateDoc {
   media: MediaRef;
   /** Background colour of the label, default white. */
   background?: string;
+  /** Optional visual guide imported from a legacy label. This is editor-only and is never printed. */
+  referenceImage?: { dataUrl: string; opacity: number; name?: string };
   elements: LabelElement[];
   params: ParamDef[];
   /** Default parameter values used when none supplied. */
