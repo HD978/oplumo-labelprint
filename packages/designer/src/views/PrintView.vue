@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import type { PrintTargetConfig } from '@labelprint/shared';
 import {
+  type LabelOrderRow,
+  MAX_BATCH_LABELS,
+  normalizeColumn,
+  parseCsv,
+  parseOrderRows,
+} from '@labelprint/shared';
+import {
   Copy,
   Eye,
+  FileSpreadsheet,
   Maximize2,
   Printer as PrinterIcon,
   Settings,
@@ -44,6 +52,11 @@ const curlOpen = ref(false);
 const curlCopied = ref(false);
 const selectedCurlOrigin = ref('');
 const customCurlOrigin = ref('');
+const batchInput = ref<HTMLInputElement | null>(null);
+const batchRows = ref<LabelOrderRow[]>([]);
+const batchFileName = ref('');
+const batchError = ref('');
+const batchBusy = ref(false);
 let debounce: ReturnType<typeof setTimeout> | undefined;
 let ro: ResizeObserver | undefined;
 
@@ -93,6 +106,7 @@ const selectedTarget = computed<PrintTargetConfig | null>(
   () => state.targets.find((p) => p.id === state.printTargetId) ?? state.targets[0] ?? null,
 );
 const selectedTargetIsClient = computed(() => isClientTarget(selectedTarget.value));
+const batchLabelCount = computed(() => batchRows.value.reduce((sum, row) => sum + row.qty, 0));
 const curlHostOptions = computed(() => {
   const current = currentOrigin();
   const opts = [{ value: current, label: t('print.cliHostCurrent', { host: current }) }];
@@ -199,6 +213,189 @@ async function requestPreviewBlob(): Promise<Blob> {
   });
   if (!res.ok) throw new Error(await res.text());
   return res.blob();
+}
+
+function spreadsheetCellText(value: unknown): string {
+  if (value == null) return '';
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (typeof value === 'object') {
+    const cell = value as { text?: string; result?: unknown; richText?: { text: string }[] };
+    if (typeof cell.text === 'string') return cell.text;
+    if (Array.isArray(cell.richText)) return cell.richText.map((part) => part.text).join('');
+    if ('result' in cell) return spreadsheetCellText(cell.result);
+  }
+  return String(value);
+}
+
+async function importBatchFile(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  batchError.value = '';
+  batchRows.value = [];
+  batchFileName.value = '';
+  batchBusy.value = true;
+  try {
+    let table: string[][];
+    if (/\.csv$/i.test(file.name)) table = parseCsv(await file.text());
+    else if (/\.xlsx$/i.test(file.name)) {
+      const { readSheet } = await import('read-excel-file/browser');
+      table = (await readSheet(file)).map((row) => row.map(spreadsheetCellText));
+    } else throw new Error('Choose a .csv or .xlsx file.');
+    batchRows.value = parseOrderRows(table, MAX_BATCH_LABELS);
+    batchFileName.value = file.name;
+    state.printValues = valuesForBatchRow(batchRows.value[0]!);
+    await refreshPreview();
+  } catch (e) {
+    batchError.value = (e as Error).message;
+  } finally {
+    batchBusy.value = false;
+    input.value = '';
+  }
+}
+
+function valuesForBatchRow(row: LabelOrderRow): Record<string, string> {
+  const values = { ...row.values };
+  for (const key of printParams.value) {
+    const definition = printTemplate.value?.params.find((param) => param.key === key);
+    const value =
+      row.values[normalizeColumn(key)] ??
+      (definition?.label ? row.values[normalizeColumn(definition.label)] : undefined);
+    if (value !== undefined) values[key] = value;
+  }
+  return values;
+}
+
+async function renderBatchPages(): Promise<
+  Array<{ jpeg: Uint8Array; imageWidth: number; imageHeight: number }>
+> {
+  const templateId = state.printTemplateId;
+  const target = selectedTarget.value;
+  const template = printTemplate.value;
+  if (!templateId || !template || !target) throw new Error(t('error.noTemplateSelected'));
+
+  const rendered: Array<{ jpeg: Uint8Array; imageWidth: number; imageHeight: number } | undefined> =
+    new Array(batchRows.value.length);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < batchRows.value.length) {
+      const index = cursor++;
+      const row = batchRows.value[index]!;
+      const res = await fetch(previewPath(target.id, templateId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(valuesForBatchRow(row)),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const raster = await previewAsJpeg(await res.blob());
+      rendered[index] = {
+        jpeg: raster.jpeg,
+        imageWidth: raster.width,
+        imageHeight: raster.height,
+      };
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(4, batchRows.value.length) }, worker));
+  return batchRows.value.flatMap((row, index) =>
+    Array.from({ length: row.qty }, () => rendered[index]!),
+  );
+}
+
+async function recordBatchPrint(target: PrintTargetConfig): Promise<void> {
+  for (const row of batchRows.value) {
+    await api.recordClientPrint(target.id, state.printTemplateId, valuesForBatchRow(row), row.qty);
+  }
+  await loadHistory();
+}
+
+async function downloadBatchPdf(): Promise<void> {
+  if (!batchRows.value.length || batchLabelCount.value > MAX_BATCH_LABELS) return;
+  batchBusy.value = true;
+  batchError.value = '';
+  try {
+    const pages = await renderBatchPages();
+    const template = printTemplate.value!;
+    const pdf = makeImagePdfBlob({
+      ...pages[0]!,
+      pageWidthMm: template.media.widthMm,
+      pageHeightMm: template.media.heightMm,
+      pages,
+    });
+    downloadBlob(
+      pdf,
+      pdfFileName(`${template.name}-${batchFileName.value.replace(/\.[^.]+$/, '')}`),
+    );
+    const target = state.targets.find(
+      (item) => item.format === 'pdf' && item.delivery === 'download',
+    );
+    if (target) await recordBatchPrint(target);
+    msg.value = `${pages.length} label pages generated.`;
+  } catch (e) {
+    batchError.value = (e as Error).message;
+  } finally {
+    batchBusy.value = false;
+  }
+}
+
+async function printBatch(): Promise<void> {
+  if (!batchRows.value.length || batchLabelCount.value > MAX_BATCH_LABELS) return;
+  const target = state.targets.find((item) => item.delivery === 'browser-dialog');
+  if (!target) {
+    batchError.value = 'Add a Browser print dialog target before printing a batch.';
+    return;
+  }
+  batchBusy.value = true;
+  batchError.value = '';
+  try {
+    const pages = await renderBatchPages();
+    const template = printTemplate.value!;
+    const urls = pages.map((page) => {
+      const bytes = page.jpeg.buffer.slice(
+        page.jpeg.byteOffset,
+        page.jpeg.byteOffset + page.jpeg.byteLength,
+      ) as ArrayBuffer;
+      return URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
+    });
+    const frame = document.createElement('iframe');
+    frame.style.position = 'fixed';
+    frame.style.left = '-10000px';
+    frame.style.top = '0';
+    frame.style.width = '1px';
+    frame.style.height = '1px';
+    frame.style.border = '0';
+    frame.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument;
+    if (!doc) throw new Error(t('print.browserPrintFailed'));
+    const pageHtml = urls
+      .map((url) => `<section class="page"><img alt="" src="${htmlEscape(url)}"></section>`)
+      .join('');
+    doc.open();
+    doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${htmlEscape(template.name)}</title><style>
+@page{size:${template.media.widthMm}mm ${template.media.heightMm}mm;margin:0}html,body{margin:0;padding:0;background:#fff}.page{width:${template.media.widthMm}mm;height:${template.media.heightMm}mm;overflow:hidden;page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}img{display:block;width:100%;height:100%;object-fit:fill}
+</style></head><body>${pageHtml}</body></html>`);
+    doc.close();
+    await waitForPrintImages(doc);
+    const cleanup = () => {
+      urls.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      frame.remove();
+    };
+    frame.contentWindow?.addEventListener('afterprint', () => setTimeout(cleanup, 500), {
+      once: true,
+    });
+    setTimeout(cleanup, 60_000);
+    frame.contentWindow?.focus();
+    frame.contentWindow?.print();
+    state.status = `${pages.length} label pages sent to the browser print dialog.`;
+    await recordBatchPrint(target);
+    msg.value = state.status;
+  } catch (e) {
+    batchError.value = (e as Error).message;
+  } finally {
+    batchBusy.value = false;
+  }
 }
 
 async function ensurePreviewBlob(): Promise<Blob> {
@@ -527,6 +724,37 @@ onMounted(() => {
         </select>
       </label>
 
+      <section class="batch-import">
+        <div class="batch-heading">
+          <h3>{{ t('print.batchTitle') }}</h3>
+          <button type="button" class="ghost subtle" :disabled="batchBusy || !state.printTemplateId" @click="batchInput?.click()">
+            <FileSpreadsheet :size="14" /> {{ t('print.batchImport') }}
+          </button>
+          <input ref="batchInput" class="batch-file" type="file" accept=".csv,.xlsx" @change="importBatchFile" />
+        </div>
+        <p v-if="!batchRows.length && !batchError" class="muted batch-note">{{ t('print.batchEmpty') }}</p>
+        <p v-if="batchFileName" class="muted batch-file-name">{{ batchFileName }}</p>
+        <p v-if="batchRows.length" class="muted batch-note">
+          {{ t('print.batchCount', { rows: batchRows.length, labels: batchLabelCount }) }}
+        </p>
+        <div v-if="batchRows.length" class="batch-list">
+          <div v-for="(row, index) in batchRows.slice(0, 5)" :key="`${row.sourceRow}-${index}`" class="batch-row">
+            <span>{{ row.outlet }}</span><span>{{ row.sku }}</span><strong>×{{ row.qty }}</strong>
+          </div>
+          <div v-if="batchRows.length > 5" class="muted batch-more">+ {{ batchRows.length - 5 }} more order rows</div>
+        </div>
+        <div v-if="batchRows.length" class="batch-actions">
+          <button type="button" :disabled="batchBusy" @click="downloadBatchPdf">
+            <FileSpreadsheet :size="14" /> {{ t('print.batchPdf') }}
+          </button>
+          <button type="button" class="primary" :disabled="batchBusy" @click="printBatch">
+            <PrinterIcon :size="14" /> {{ t('print.batchPrint') }}
+          </button>
+        </div>
+        <p v-if="batchBusy" class="muted batch-note">{{ t('print.batchBusy') }}</p>
+        <p v-if="batchError" class="batch-error" role="alert">{{ batchError }}</p>
+      </section>
+
       <div class="params-region">
         <h3>{{ t('print.params') }}</h3>
         <div class="param-scroll">
@@ -687,6 +915,66 @@ onMounted(() => {
 .template-picker {
   flex: none;
   padding: 0 16px;
+}
+.batch-import {
+  flex: none;
+  margin: 0 16px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-muted);
+}
+.batch-heading,
+.batch-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.batch-heading h3 {
+  margin: 0;
+  font-size: 12px;
+}
+.batch-heading button,
+.batch-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 1;
+  font-size: 11px;
+}
+.batch-heading button { flex: none; }
+.batch-file { display: none; }
+.batch-note,
+.batch-file-name,
+.batch-more {
+  margin: 7px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.batch-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.batch-list {
+  max-height: 108px;
+  overflow: auto;
+  margin-top: 7px;
+  border-top: 1px solid var(--border);
+}
+.batch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 7px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.batch-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.batch-row strong { white-space: nowrap; }
+.batch-actions { margin-top: 9px; }
+.batch-error {
+  margin: 8px 0 0;
+  color: var(--danger, #b42318);
+  font-size: 11px;
 }
 .params-region {
   flex: 1;
