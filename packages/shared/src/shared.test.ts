@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseCsv, parseOrderRows } from './batch.js';
 import { compileToSvg } from './compiler.js';
 import { defaultMediaProfiles } from './factory.js';
 import { applyParams, collectParams, extractKeys } from './params.js';
@@ -18,6 +19,30 @@ describe('units', () => {
   });
   it('pt -> mm', () => {
     expect(ptToMm(72)).toBeCloseTo(25.4, 5);
+  });
+});
+
+describe('batch imports', () => {
+  it('parses quoted CSV values, commas, and newlines', () => {
+    expect(parseCsv('Outlet,SKU,Qty,Ingredients\r\nBangsar,A-1,2,"Tofu,\nsoy"')).toEqual([
+      ['Outlet', 'SKU', 'Qty', 'Ingredients'],
+      ['Bangsar', 'A-1', '2', 'Tofu,\nsoy'],
+    ]);
+  });
+
+  it('maps common column aliases and enforces the batch limit', () => {
+    const rows = parseOrderRows([
+      ['Branch', 'Product Code', 'Quantity', 'Ingredients'],
+      ['Bangsar', 'VRN-1', '2', 'Soy'],
+    ]);
+    expect(rows[0]).toMatchObject({ outlet: 'Bangsar', sku: 'VRN-1', qty: 2 });
+    expect(rows[0]?.values.ingredients).toBe('Soy');
+    expect(() =>
+      parseOrderRows([
+        ['Outlet', 'SKU', 'Qty'],
+        ['A', 'X', '241'],
+      ]),
+    ).toThrow(/limit is 240/);
   });
 });
 
