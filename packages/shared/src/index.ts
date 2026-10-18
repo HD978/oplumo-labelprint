@@ -1,3 +1,4 @@
+export * from './batch.js';
 export * from './compiler.js';
 export * from './factory.js';
 export * from './params.js';
