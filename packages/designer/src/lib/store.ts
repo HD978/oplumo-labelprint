@@ -15,6 +15,7 @@ import { computed, reactive, watch } from 'vue';
 import { api } from './api';
 import { type Box, bboxOf, translatePatch, unionBox } from './geometry';
 import { t } from './i18n';
+import { makeVerronaDraftTemplates } from './verronaDrafts';
 
 type AlignKind = 'left' | 'hcenter' | 'right' | 'top' | 'vmiddle' | 'bottom';
 export type ViewName = 'templates' | 'design' | 'print' | 'history';
@@ -523,6 +524,23 @@ export function openTemplate(id: string): void {
 export function createTemplate(media: MediaProfile): void {
   newTemplate(media);
   setActiveView('design');
+}
+
+/** Upsert the 12 editable 40×20 mm Verrona starter drafts from the supplied filename screenshot. */
+export async function importVerronaDrafts(): Promise<void> {
+  try {
+    const drafts = makeVerronaDraftTemplates();
+    let created = 0;
+    for (const draft of drafts) {
+      if (state.templates.some((existing) => existing.id === draft.id)) continue;
+      await api.saveTemplate(draft);
+      created += 1;
+    }
+    state.templates = await api.templates();
+    setStatus(t('templates.verronaImported', { count: created }));
+  } catch (e) {
+    setStatus(t('status.saveFailed', { message: (e as Error).message }));
+  }
 }
 
 export async function saveTarget(target: PrintTargetConfig): Promise<PrintTargetConfig> {
