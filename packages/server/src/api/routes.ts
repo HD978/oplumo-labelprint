@@ -41,6 +41,15 @@ interface CopiesQuery {
   copies?: string | number;
 }
 
+interface PreviewQuery {
+  dpi?: string | number;
+}
+
+function parsePreviewDpi(value: unknown, fallback: number): number {
+  const dpi = Number(value ?? fallback);
+  return Number.isFinite(dpi) ? Math.max(203, Math.min(600, Math.round(dpi))) : fallback;
+}
+
 interface ClientPrintHistoryQuery extends CopiesQuery {
   bytes?: string | number;
 }
@@ -246,24 +255,32 @@ export async function registerApi(app: FastifyInstance): Promise<void> {
   }));
 
   // ---- preview: high-fidelity server raster (resvg) ----
-  app.post<{ Params: { templateId: string }; Body: unknown }>(
+  app.post<{ Params: { templateId: string }; Querystring: PreviewQuery; Body: unknown }>(
     '/api/templates/:templateId/preview',
     async (req, reply) => {
       const doc = await repos.templates.get(req.params.templateId);
       if (!doc) return reply.code(404).send({ error: 'Template not found' });
-      const { png } = await renderPreviewPng(doc, directValues(req.body));
+      const { png } = await renderPreviewPng(
+        doc,
+        directValues(req.body),
+        parsePreviewDpi(req.query.dpi, 600),
+      );
       return reply.header('Content-Type', 'image/png').send(png);
     },
   );
 
-  app.post<{ Params: TargetTemplateParams; Body: unknown }>(
+  app.post<{ Params: TargetTemplateParams; Querystring: PreviewQuery; Body: unknown }>(
     '/api/targets/:targetId/templates/:templateId/preview',
     async (req, reply) => {
       const doc = await repos.templates.get(req.params.templateId);
       if (!doc) return reply.code(404).send({ error: 'Template not found' });
       const target = await repos.targets.get(req.params.targetId);
       if (!target) return reply.code(404).send({ error: 'Target not found' });
-      const { png } = await renderPreviewPng(doc, directValues(req.body), target.dpi ?? 203);
+      const { png } = await renderPreviewPng(
+        doc,
+        directValues(req.body),
+        parsePreviewDpi(req.query.dpi, target.dpi ?? 203),
+      );
       return reply.header('Content-Type', 'image/png').send(png);
     },
   );
