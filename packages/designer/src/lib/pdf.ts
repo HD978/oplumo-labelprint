@@ -7,6 +7,8 @@ export interface ImagePdfInput {
   pageWidthMm: number;
   pageHeightMm: number;
   copies?: number;
+  /** Distinct rendered labels; when supplied, each becomes one page in the PDF. */
+  pages?: Array<{ jpeg: Uint8Array; imageWidth: number; imageHeight: number }>;
 }
 
 const encoder = new TextEncoder();
@@ -36,32 +38,42 @@ function streamObject(header: string, data: Uint8Array): (string | Uint8Array)[]
 
 export function buildImagePdf(input: ImagePdfInput): Uint8Array {
   const copies = Math.max(1, Math.min(999, Math.floor(input.copies ?? 1)));
+  const pages = input.pages?.length
+    ? input.pages
+    : Array.from({ length: copies }, () => ({
+        jpeg: input.jpeg,
+        imageWidth: input.imageWidth,
+        imageHeight: input.imageHeight,
+      }));
   const pageWidth = input.pageWidthMm * PT_PER_MM;
   const pageHeight = input.pageHeightMm * PT_PER_MM;
   const content = bytes(`q\n${pdfNum(pageWidth)} 0 0 ${pdfNum(pageHeight)} 0 0 cm\n/Im0 Do\nQ\n`);
 
   const objects: Array<Array<string | Uint8Array>> = [];
   const add = (parts: Array<string | Uint8Array>) => objects.push(parts);
-
-  const pageIds = Array.from({ length: copies }, (_, i) => 5 + i * 2);
   add(['<< /Type /Catalog /Pages 2 0 R >>']);
+  const pageIds = pages.map((_, i) => 4 + pages.length + i * 2);
   add([
-    `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${copies} >>`,
+    `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pages.length} >>`,
   ]);
-  add(
-    streamObject(
-      `<< /Type /XObject /Subtype /Image /Width ${input.imageWidth} /Height ${input.imageHeight}` +
-        ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode',
-      input.jpeg,
-    ),
-  );
 
-  for (let i = 0; i < copies; i += 1) {
-    const contentId = 4 + i * 2;
+  for (const page of pages) {
+    add(
+      streamObject(
+        `<< /Type /XObject /Subtype /Image /Width ${page.imageWidth} /Height ${page.imageHeight}` +
+          ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode',
+        page.jpeg,
+      ),
+    );
+  }
+
+  for (let i = 0; i < pages.length; i += 1) {
+    const imageId = 3 + i;
+    const contentId = 3 + pages.length + i * 2;
     add(streamObject('<<', content));
     add([
       `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pdfNum(pageWidth)} ${pdfNum(pageHeight)}] ` +
-        `/Resources << /XObject << /Im0 3 0 R >> >> /Contents ${contentId} 0 R >>`,
+        `/Resources << /XObject << /Im0 ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>`,
     ]);
   }
 
