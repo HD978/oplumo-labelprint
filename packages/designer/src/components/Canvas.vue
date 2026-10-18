@@ -288,6 +288,14 @@ onUnmounted(() => {
         @pointerdown="onBackgroundDown"
       >
         <div v-if="state.view.showGrid" class="grid" :style="gridStyle"></div>
+        <img
+          v-if="state.doc?.referenceImage"
+          class="reference-layer"
+          :src="state.doc.referenceImage.dataUrl"
+          :style="{ opacity: state.doc.referenceImage.opacity }"
+          alt="Legacy label reference"
+          draggable="false"
+        />
         <!-- WYSIWYG content from the SHARED compiler (same code the server rasterises) -->
         <div class="label" v-html="designSvg"></div>
 
@@ -393,6 +401,14 @@ onUnmounted(() => {
 .grid {
   position: absolute;
   inset: 0;
+  pointer-events: none;
+}
+.reference-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
   pointer-events: none;
 }
 .label {
