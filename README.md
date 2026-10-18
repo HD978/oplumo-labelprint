@@ -105,6 +105,16 @@ available for other die-cut sizes.
 Main screens are addressable with hash routes such as `#/templates`,
 `#/design/<template-id>`, `#/print/<template-id>`, and `#/history`.
 
+### Order Batch Import
+
+On the Print page, import a UTF-8 CSV or `.xlsx` workbook with `Outlet`, `SKU`,
+and `Qty` columns. Common headings such as `Branch`, `Product Code`, and
+`Quantity` are also recognized. Other columns are matched to template parameter
+keys or labels (for example, an `Ingredients` column fills an `ingredients`
+parameter). The imported total is limited to 240 labels per batch. Download a
+multi-page PDF or send the batch to the Windows printer through the browser
+print dialog. A minimal CSV example is in `examples/order-import.csv`.
+
 ## Docker Development
 
 Docker is useful when you want the same Linux font and rendering environment as
