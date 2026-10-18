@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { compileToSvg, defaultMediaProfiles, type TemplateDoc } from '@labelprint/shared';
-import { Copy, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
+import { Copy, Download, Pencil, Plus, Printer, Trash2 } from 'lucide-vue-next';
 import { confirmDialog } from '../lib/confirm';
 import { mediaTypeLabel, t } from '../lib/i18n';
 import {
   createTemplate,
   duplicateTemplateById,
+  importVerronaDrafts,
   openTemplate,
   removeTemplate,
   selectPrintTemplate,
@@ -47,6 +48,7 @@ async function onDelete(tmpl: TemplateDoc): Promise<void> {
       </div>
       <span class="count">{{ t('common.count.templates', { count: state.templates.length }) }}</span>
       <div class="spacer"></div>
+      <button @click="importVerronaDrafts"><Download :size="15" /> {{ t('templates.verronaImport') }}</button>
       <button class="primary" @click="onNew"><Plus :size="15" /> {{ t('templates.new') }}</button>
     </div>
 
