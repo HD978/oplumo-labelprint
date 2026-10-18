@@ -115,6 +115,13 @@ parameter). The imported total is limited to 240 labels per batch. Download a
 multi-page PDF or send the batch to the Windows printer through the browser
 print dialog. A minimal CSV example is in `examples/order-import.csv`.
 
+### Legacy Label Reference
+
+In Design, import a PNG/JPEG image or PDF as a reference layer. PDF import uses
+the first page. The reference can be faded or removed and is saved with the
+template, but it is excluded from preview exports and print output; recreate
+the text, ingredients, barcodes, and geometry with editable designer elements.
+
 ## Docker Development
 
 Docker is useful when you want the same Linux font and rendering environment as
