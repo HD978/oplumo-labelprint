@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { defaultMediaProfiles } from '@labelprint/shared';
-import { Grid3x3, Magnet, Maximize2, Plus, Save, ZoomIn, ZoomOut } from 'lucide-vue-next';
+import {
+  FileImage,
+  Grid3x3,
+  Magnet,
+  Maximize2,
+  Plus,
+  Save,
+  Trash2,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-vue-next';
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import LabelCanvas from '../components/Canvas.vue';
 import IconButton from '../components/IconButton.vue';
@@ -17,6 +27,65 @@ function onNew(): void {
 function onName(e: Event): void {
   if (state.doc) {
     state.doc.name = (e.target as HTMLInputElement).value;
+    state.dirty = true;
+  }
+}
+const referenceInput = ref<HTMLInputElement | null>(null);
+const referenceError = ref('');
+async function importReference(e: Event): Promise<void> {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  referenceError.value = '';
+  if (!file || !state.doc) return;
+  if (file.size > 20 * 1024 * 1024) {
+    referenceError.value = 'Reference file must be 20 MB or smaller.';
+    return;
+  }
+  try {
+    let dataUrl: string;
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      const pdfjs = await import('pdfjs-dist');
+      pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.mjs',
+        import.meta.url,
+      ).toString();
+      const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+      const page = await pdf.getPage(1);
+      const viewport0 = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: (state.doc.media.widthMm * 4) / viewport0.width });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Could not render the PDF page.');
+      await page.render({ canvasContext: context, viewport }).promise;
+      dataUrl = canvas.toDataURL('image/png');
+    } else if (file.type.startsWith('image/')) {
+      dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () =>
+          typeof reader.result === 'string'
+            ? resolve(reader.result)
+            : reject(new Error('Could not read image.'));
+        reader.onerror = () => reject(new Error('Could not read image.'));
+        reader.readAsDataURL(file);
+      });
+    } else throw new Error('Choose an image or PDF file.');
+    state.doc.referenceImage = { dataUrl, opacity: 0.35, name: file.name };
+    state.dirty = true;
+  } catch (error) {
+    referenceError.value = error instanceof Error ? error.message : 'Could not import reference.';
+  }
+}
+function onReferenceOpacity(e: Event): void {
+  if (!state.doc?.referenceImage) return;
+  state.doc.referenceImage.opacity = Number((e.target as HTMLInputElement).value);
+  state.dirty = true;
+}
+function removeReference(): void {
+  if (state.doc) {
+    delete state.doc.referenceImage;
     state.dirty = true;
   }
 }
@@ -86,6 +155,16 @@ onBeforeUnmount(() => fitObserver?.disconnect());
         <span v-if="state.dirty" class="dirty" :title="t('design.unsaved')"><i></i> {{ t('design.unsaved') }}</span>
         <IconButton :icon="Plus" :label="t('design.new')" @click="onNew" />
       </div>
+      <div class="command-group reference-tools">
+        <input ref="referenceInput" class="reference-file" type="file" accept="image/*,application/pdf,.pdf" @change="importReference" />
+        <IconButton :icon="FileImage" :label="state.doc?.referenceImage ? 'Replace reference' : 'Import reference image or PDF'" @click="referenceInput?.click()" />
+        <template v-if="state.doc?.referenceImage">
+          <span class="reference-name" :title="state.doc.referenceImage.name">{{ state.doc.referenceImage.name || 'Reference layer' }}</span>
+          <label class="reference-opacity" title="Reference opacity"><input type="range" min="0.05" max="1" step="0.05" :value="state.doc.referenceImage.opacity" @input="onReferenceOpacity" /></label>
+          <IconButton :icon="Trash2" label="Remove reference" @click="removeReference" />
+        </template>
+      </div>
+      <span v-if="referenceError" class="reference-error">{{ referenceError }}</span>
       <div class="spacer"></div>
       <div class="command-group">
         <IconButton :icon="ZoomOut" :label="t('design.zoomOut')" @click="zoom(-2)" />
@@ -196,6 +275,10 @@ onBeforeUnmount(() => fitObserver?.disconnect());
   width: 52px;
   height: 28px;
 }
+.reference-file { display: none; }
+.reference-name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--muted); }
+.reference-opacity input { width: 64px; }
+.reference-error { color: var(--warn); font-size: 11px; max-width: 150px; }
 .workarea {
   flex: 1;
   display: grid;
