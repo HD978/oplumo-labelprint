@@ -17,3 +17,6 @@ data/templates/
 .playwright-mcp/
 designer-*.png
 out_docker/
+
+# Generated Excel label exports and source snapshots
+data/bulk/

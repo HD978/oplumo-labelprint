@@ -47,8 +47,16 @@ export async function renderTemplate(
   doc: TemplateDoc,
   values: Record<string, string> | undefined,
   dpi: number,
+  strictAssets = false,
 ): Promise<RasterResult> {
   const assets = await buildAssets(doc, values);
+  if (strictAssets) {
+    for (const el of doc.elements) {
+      if (['barcode', 'qrcode', 'image'].includes(el.type) && !assets[el.id]) {
+        throw new Error(`Cannot render required ${el.type} element: ${el.id}`);
+      }
+    }
+  }
   const svg = compileToSvg(doc, { values, assets, placeholders: false });
   const widthDots = Math.max(1, Math.round(doc.media.widthMm * dotsPerMm(dpi)));
 

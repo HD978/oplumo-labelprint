@@ -6,6 +6,7 @@ import { setActiveView, state, type ViewName } from '../lib/store';
 import { setThemeChoice, type ThemeChoice, themeState } from '../lib/theme';
 
 const tabs = computed<{ id: ViewName; label: string; icon: typeof PenTool }[]>(() => [
+  { id: 'studio', label: t('nav.studio'), icon: LayoutGrid },
   { id: 'templates', label: t('nav.templates'), icon: LayoutGrid },
   { id: 'design', label: t('nav.design'), icon: PenTool },
   { id: 'print', label: t('nav.print'), icon: Printer },
@@ -26,7 +27,7 @@ function onTheme(e: Event): void {
     <div class="brand">
       <span class="brand-mark"><Tag :size="17" :stroke-width="2.2" /></span>
       <span class="brand-copy">
-        <strong>LabelPrint</strong>
+        <strong>OPLUMO</strong>
         <small>{{ t('app.subtitle') }}</small>
       </span>
     </div>

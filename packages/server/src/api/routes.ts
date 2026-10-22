@@ -12,6 +12,7 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 import { listFontFamilies } from '../fonts.js';
 import { renderJob, renderPreviewPng, runPrint } from '../pipeline.js';
 import { addHistory, repos } from '../store/repos.js';
+import { registerStudio } from '../studio/routes.js';
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -146,6 +147,7 @@ function clientPrintDetail(target: PrintTargetConfig, query: ClientPrintHistoryQ
 }
 
 export async function registerApi(app: FastifyInstance): Promise<void> {
+  await registerStudio(app);
   app.addContentTypeParser(
     'application/x-www-form-urlencoded',
     { parseAs: 'string' },
