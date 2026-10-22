@@ -17,8 +17,8 @@ import { type Box, bboxOf, translatePatch, unionBox } from './geometry';
 import { t } from './i18n';
 
 type AlignKind = 'left' | 'hcenter' | 'right' | 'top' | 'vmiddle' | 'bottom';
-export type ViewName = 'templates' | 'design' | 'print' | 'history';
-const viewNames: readonly ViewName[] = ['templates', 'design', 'print', 'history'];
+export type ViewName = 'studio' | 'templates' | 'design' | 'print' | 'history';
+const viewNames: readonly ViewName[] = ['studio', 'templates', 'design', 'print', 'history'];
 
 interface HashRoute {
   view: ViewName;
@@ -105,7 +105,7 @@ export const state = reactive<State>({
   status: '',
   dirty: false,
   fonts: [],
-  activeView: initialRoute?.view ?? savedPrint.v ?? 'templates',
+  activeView: initialRoute?.view ?? savedPrint.v ?? 'studio',
   history: [],
   printTemplateId: savedPrint.t ?? '',
   printValues: savedPrint.vals ?? {},

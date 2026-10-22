@@ -223,3 +223,11 @@ Implementation notes for coding agents and maintainers live in
 ## License
 
 MIT
+
+## OPLUMO Label Studio preview
+
+Open `#/studio` for the synthetic production-workspace preview: searchable order
+inbox, sample product rules, validation blocks and session-only batch approval.
+No order connector or printer is connected by this preview. Existing design and
+print screens remain available. See [phase-one design](docs/LABEL-STUDIO.md) for
+the proposed Sheets/website ingestion contract and production implementation gaps.

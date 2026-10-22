@@ -7,6 +7,7 @@ import { initHashRouting, loadAll, state } from './lib/store';
 import DesignView from './views/DesignView.vue';
 import HistoryView from './views/HistoryView.vue';
 import PrintView from './views/PrintView.vue';
+import StudioView from './views/StudioView.vue';
 import TemplatesView from './views/TemplatesView.vue';
 
 onMounted(() => {
@@ -20,6 +21,7 @@ onMounted(() => {
     <div class="app">
       <TopBar />
       <main class="workspace">
+        <StudioView v-if="state.activeView === 'studio'" />
         <TemplatesView v-if="state.activeView === 'templates'" />
         <!-- design stays mounted (v-show) to preserve editor state when switching tabs -->
         <DesignView v-show="state.activeView === 'design'" />
