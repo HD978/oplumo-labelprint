@@ -233,6 +233,9 @@ immutable snapshots and record approvals. Orders, revisions and batches persist 
 editing and single-template printing remain available independently.
 
 This is a trusted-network development workspace, without user/tenant isolation.
-Studio does not yet render batch label PDFs, calculate EXP, synchronize Sheets or
-web orders, dispatch print jobs or manage reprints. See [workspace setup, API and
+The Excel bulk-label tab now imports multiple .xlsx workbooks, maps columns to
+native templates and generates size-separated label PDFs (ZIP for mixed sizes).
+See [Excel bulk labels](docs/EXCEL-BULK-LABELS.md). It is independent of the order
+inbox: rendering approved order batches, calculating EXP, synchronizing Sheets or
+web orders, dispatching print jobs and managing reprints remain pending. See [workspace setup, API and
 production gaps](docs/LABEL-STUDIO.md).

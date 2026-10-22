@@ -6,6 +6,44 @@ export type LocaleChoice = 'auto' | Locale;
 
 const messages = {
   en: {
+    'studio.bulk': 'Excel bulk labels',
+    'bulk.title': 'Excel → die-cut label PDF',
+    'bulk.description':
+      'Upload workbooks, map columns to template fields, review counts and generate labels.',
+    'bulk.boundary':
+      'Die-cut means one page at the existing stock dimensions. No cutter paths or physical cutting. Templates must already exist in the designer.',
+    'bulk.upload': 'Select multiple Excel workbooks',
+    'bulk.fileLimit':
+      'Up to 10 .xlsx files, 2 MiB each. First row must contain unique column headers. Up to 500 selected data rows and 5000 labels per export.',
+    'bulk.duplicateFiles': 'File names must be distinct in the same upload.',
+    'bulk.sheet': 'Worksheet',
+    'bulk.rows': 'rows',
+    'bulk.template': 'Default label template',
+    'bulk.templateColumn': 'Optional template ID column (mixed sizes)',
+    'bulk.choose': 'Choose…',
+    'bulk.useSelected': 'Use the selected template for every row',
+    'bulk.quantity': 'Label copies column',
+    'bulk.oneEach': 'One label per row',
+    'bulk.quantityNote':
+      'The copies column means actual label count, not order-unit conversion. Dates and EXP are used exactly as supplied; this tool does not calculate shelf life. Formula cells use saved cached results; recalculate and save Excel first.',
+    'bulk.parameter': 'Template field',
+    'bulk.binding': 'Source type',
+    'bulk.value': 'Column / fixed value',
+    'bulk.column': 'Excel column',
+    'bulk.fixed': 'Fixed text',
+    'bulk.dataPreview': 'First 10 data rows',
+    'bulk.source': 'File / sheet / row',
+    'bulk.review': 'Check data and preview',
+    'bulk.summary': 'Export review',
+    'bulk.labels': 'labels',
+    'bulk.previewNote':
+      'The image shows the first row only. All rows are validated for mappings and copies; review source data before exporting. Mixed sizes are automatically separated into one PDF per size inside a ZIP. Print at 100% / Actual size.',
+    'bulk.generate': 'Confirm and generate PDF',
+    'bulk.downloaded': 'PDF generated and download requested. Physical printing is not confirmed.',
+    'bulk.firstLabel': 'First label — illustrative output from your chosen template',
+    'bulk.history': 'PDF generation records',
+    'bulk.generatedOnly': 'PDF generated · not a physical print confirmation',
+
     'studio.previewNote':
       'This is a quantity plan. Label content/EXP rendering and printer dispatch are still pending.',
     'studio.rulesNote': 'Rule editor changes apply only after validation and saving.',
@@ -352,6 +390,43 @@ const messages = {
     'targetTypes.network': 'Network socket 9100',
   },
   'zh-CN': {
+    'studio.bulk': 'Excel 批量制标签',
+    'bulk.title': 'Excel → Die-cut 标签 PDF',
+    'bulk.description': '批量上传工作簿，匹配模板字段，核对数量后生成标签。',
+    'bulk.boundary':
+      'Die-cut 指每页匹配现有标签纸尺寸，不生成裁切路径或执行裁切。需先在设计器准备标签模板。',
+    'bulk.upload': '选择多个 Excel 工作簿',
+    'bulk.fileLimit':
+      '最多 10 个 .xlsx，每个不超过 2 MiB。第一行为不重复栏位名。每次最多 500 行数据、5000 张标签。',
+    'bulk.duplicateFiles': '同一次上传的文件名不能重复。',
+    'bulk.sheet': '工作表',
+    'bulk.rows': '行',
+    'bulk.template': '默认标签模板',
+    'bulk.templateColumn': '可选：模板编号栏位（混合尺寸）',
+    'bulk.choose': '请选择…',
+    'bulk.useSelected': '全部使用所选模板',
+    'bulk.quantity': '标签份数栏位',
+    'bulk.oneEach': '每行生成 1 张',
+    'bulk.quantityNote':
+      '份数栏位代表实际标签张数，不做订单单位换算。日期和 EXP 按表格原值使用，此入口不自动计算保质期。公式使用已保存的计算结果，请先在 Excel 重算并保存。',
+    'bulk.parameter': '模板字段',
+    'bulk.binding': '数据来源',
+    'bulk.value': '栏位／固定内容',
+    'bulk.column': 'Excel 栏位',
+    'bulk.fixed': '固定文字',
+    'bulk.dataPreview': '前 10 行数据',
+    'bulk.source': '文件／工作表／行',
+    'bulk.review': '检查数据并预览',
+    'bulk.summary': '生成前核对',
+    'bulk.labels': '张标签',
+    'bulk.previewNote':
+      '图片仅预览第一行；全部行会检查字段及份数。导出前请核对源数据。混合尺寸会按尺寸分成多个 PDF，打包为 ZIP。打印请选择 100%／实际尺寸。',
+    'bulk.generate': '确认并生成 PDF',
+    'bulk.downloaded': 'PDF 已生成并请求下载，不代表已实际打印。',
+    'bulk.firstLabel': '首张标签：按所选模板实际渲染',
+    'bulk.history': 'PDF 生成记录',
+    'bulk.generatedOnly': '已生成 PDF · 未确认实体打印',
+
     'studio.previewNote': '此处为数量计划。标签内容／EXP 渲染和打印机发送尚未接入。',
     'studio.rulesNote': '编辑规则后需校验并保存才会生效。',
     'studio.error': '操作失败',

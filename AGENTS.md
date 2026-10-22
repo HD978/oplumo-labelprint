@@ -42,6 +42,9 @@ not the product identity.
 - `packages/designer/src/lib/pdf.ts`: small browser-side raster PDF writer.
 - `packages/designer/src/lib/theme.ts`: light/dark preference handling.
 - `packages/designer/src/views/`: top-level UI workflows.
+- `packages/server/src/studio/excel.ts`: bounded XLSX decoding into source rows.
+- `packages/server/src/studio/bulk.ts`: strict bulk field mapping and frozen-template, size-separated PDF exports.
+- `docs/EXCEL-BULK-LABELS.md`: bulk workflow limits, operator steps and separation from order-batch approvals.
 - `packages/designer/src/components/`: reusable editor and dialog components.
 
 When behavior changes, update the nearby code comment, test, or component first;

@@ -66,13 +66,15 @@ Limits: 1,000 orders per import, 1,000 lines per order, 5,000 current orders / 2
 | POST | `/api/studio/batches` | Prepare or return existing current-source snapshot (`deliveryDate` body) |
 | POST | `/api/studio/batches/:id/approve` | Recheck sources and record local confirmation |
 
+The separate **Excel bulk labels** tab now supports multiple XLSX files, field mapping and size-separated label PDF generation. See [Excel workflow](EXCEL-BULK-LABELS.md). That path does not render order-inbox batches or reuse their approval state.
+
 No Studio dispatch or reprint endpoint exists. Existing single-template editor/printing APIs remain independent and do **not** enforce Studio batch approval. Do not interpret this prototype as a production print permission gate.
 
 ## Production boundary and remaining work
 
 The ordering website must own order identity, amendments, cutoff and delivery commitments. Studio owns explicit label mappings, quantity/EXP policies, template versions, immutable batch approvals and print/reprint audit. Initial Sheets and future website adapters should normalize into one contract, with schema version, authenticated server-resolved tenant identity and stable external IDs. They are not connected yet.
 
-Before production, add authenticated tenant/role enforcement, a transactional database with cross-process uniqueness, API credentials and adapter retries, dedicated master-data forms, production date/expiry/storage policy, placeholder/field mapping, approved artwork/PDF template ingestion, quantity-plan-to-label rendering, PDF/physical-stock validation and backups. Current local template reads and Studio file writes are not one transaction; approval can become stale immediately after an external template edit. A dispatch worker must recheck transactional/versioned sources at send time.
+Before production, add authenticated tenant/role enforcement, a transactional database with cross-process uniqueness, API credentials and adapter retries, dedicated master-data forms, production date/expiry/storage policy, placeholder/field mapping, approved artwork/PDF template ingestion, order-batch-to-label rendering, production PDF/physical-stock validation and backups. Current local template reads and Studio file writes are not one transaction; approval can become stale immediately after an external template edit. A dispatch worker must recheck transactional/versioned sources at send time.
 
 Printing state design: generated → awaiting approval → approved → queued → sending → sent → operator-confirmed output. Preserve blocked, stale, cancelled, failed and uncertain delivery states. A timeout after sending requires reconciliation before retry. Reprints need selected bounded quantities, reason, authenticated operator and links to the original job. None of the dispatch, output-confirmation or reprint stages are implemented in Studio yet.
 
