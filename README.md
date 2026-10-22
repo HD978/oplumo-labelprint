@@ -224,10 +224,15 @@ Implementation notes for coding agents and maintainers live in
 
 MIT
 
-## OPLUMO Label Studio preview
+## OPLUMO Label Studio local workspace
 
-Open `#/studio` for the synthetic production-workspace preview: searchable order
-inbox, sample product rules, validation blocks and session-only batch approval.
-No order connector or printer is connected by this preview. Existing design and
-print screens remain available. See [phase-one design](docs/LABEL-STUDIO.md) for
-the proposed Sheets/website ingestion contract and production implementation gaps.
+Open `#/studio` for the local production-workspace prototype: manually import order
+JSON, save outlet/SKU conversion rules, calculate date-based quantity plans, create
+immutable snapshots and record approvals. Orders, revisions and batches persist in
+`data/studio.json`. Source edits mark earlier batches stale. Existing template
+editing and single-template printing remain available independently.
+
+This is a trusted-network development workspace, without user/tenant isolation.
+Studio does not yet render batch label PDFs, calculate EXP, synchronize Sheets or
+web orders, dispatch print jobs or manage reprints. See [workspace setup, API and
+production gaps](docs/LABEL-STUDIO.md).

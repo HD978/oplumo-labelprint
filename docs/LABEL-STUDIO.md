@@ -1,50 +1,83 @@
-# OPLUMO Label Studio — phase 1 design
+# OPLUMO Label Studio — local workspace
 
-Open `#/studio`. This is an interactive synthetic-data preview, not a production order importer. Search filters the inbox, review includes all valid sample rows regardless of search, and approval is session-only and cannot send a print job. Existing template designer and single-template print workflows remain available. No customer data is seeded.
+Open `#/studio`. This branch adds a working **single-process, single-factory local development workspace** to the existing label designer. It starts empty; it never imports customer data or changes any Google Sheet, Apps Script or ordering website. Keep the existing trusted-network deployment boundary. No employee authentication or company isolation has been added.
 
-## Ownership and boundary
+## Available now
 
-The ordering system owns orders, revisions, outlet identity, delivery dates, quantities, cancellations and amendment approval. Studio owns SKU mapping, confirmed unit conversions, approved immutable template versions, expiry policies, batch snapshots, dispatch and reprint audit. Google Sheets is the initial adapter; the website will later implement the same ingestion contract. Do not infer conversions or expiry from product names. The sample sizes 40x20, 70x50 and 100x150 are illustrative, not changes to any existing ordering site's stock settings.
+- Save outlet IDs and explicit SKU/unit conversion rules using the configuration editor.
+- Match rules to real native template IDs, listed from the existing template library.
+- Import order arrays manually with strict validation and positive integer quantities.
+- Namespace order IDs by source; accept higher revisions, reject older/conflicting revisions, and make identical replays idempotent. Preserve received order revisions, including cancellations.
+- Select a delivery date, calculate quantity and stock-size totals, and list blocking unknown outlets, missing rules/templates, invalid dimensions and quantity limits.
+- Prepare an immutable quantity-plan snapshot only when every selected-date line passes. The search box filters display, never batch membership. Counts exclude separator paper.
+- Record confirmation separately from printing. Concurrent creation returns the same batch for identical sources; repeated approval preserves its original confirmation time.
+- Detect stale snapshots when a selected-date order, configuration or used template changes. Recheck at approval; stale batches remain visible and cannot be approved.
+- Preserve actual source orders, rules and native template documents in each batch snapshot; download a plan as JSON. This download is not a printable label PDF.
+- Save in `LABELPRINT_DATA_DIR/studio.json` using serialized writes and temporary-file rename. A restart reopens the workspace. Invalid JSON is not silently replaced.
 
-## Proposed ingestion contract (not implemented)
+The UI deliberately exposes JSON editors in this developer phase. A dedicated SKU/outlet form, granular operator roles and production approval identity remain future work. Confirmations currently have a server timestamp but **no authenticated operator identity**.
+
+## Local setup
+
+1. Build and start the app as described in README.
+2. Open `#/studio`, then Product rules. Copy an actual template ID from the displayed library.
+3. Save configuration:
 
 ```json
 {
-  "schemaVersion": 1,
-  "companyId": "resolved-by-authenticated-server",
-  "source": "ordering-web",
-  "orderId": "external-stable-id",
-  "revision": 2,
-  "status": "confirmed",
-  "outletId": "outlet-id",
-  "deliveryDate": "2026-12-01",
-  "updatedAt": "2026-11-28T03:00:00Z",
-  "lines": [{"lineId": "line-1", "sku": "SKU-001", "quantity": "12", "unit": "PKT"}]
+  "outlets": ["SAMPLE-OUTLET"],
+  "rules": [
+    {"sku": "SAMPLE-SKU", "unit": "PKT", "labelsPerUnit": 1, "templateId": "REPLACE_WITH_EXISTING_TEMPLATE_ID"}
+  ]
 }
 ```
 
-Company identity must be established from authentication, never trusted from a submitted payload. Namespace external IDs by company and source. Same order/revision/payload is an idempotent replay; changed payload with same revision is a conflict. Older revisions must not overwrite newer ones. Require explicit cancellation events, preserve prior revisions, and invalidate unprinted snapshots on source changes. After dispatch, amendments require reconciliation and explicit operator-approved delta/reprint decisions. No automatic full-order reprint.
+4. Choose a delivery date. In Order inbox, expand Order JSON, insert the sample order and import it. The sample button only edits text; import requires a separate explicit action.
+5. Review all validation issues, create a snapshot, then approve it. Inspect Batch records. Nothing is sent to a printer by this Studio flow.
 
-Validate complete payloads before acceptance: ISO dates, monotonic positive revisions, unique nonempty line IDs, known outlet and SKU, allowed units, positive decimal quantities with defined precision and maximums. Cancelled events identify the order/revision and need no positive lines. Persist transactionally with tenant isolation and atomic unique keys.
+## Implemented local ingestion shape
 
-## Batch and printing states (planned)
+```json
+[
+  {
+    "source": "manual",
+    "orderId": "SAMPLE-001",
+    "revision": 1,
+    "status": "confirmed",
+    "outletId": "SAMPLE-OUTLET",
+    "deliveryDate": "2026-12-01",
+    "lines": [{"lineId": "1", "sku": "SAMPLE-SKU", "quantity": 12, "unit": "PKT"}]
+  }
+]
+```
 
-Validated → generated → awaiting approval → approved → queued → sending → sent → operator-confirmed output. Separate blocked, stale, cancelled, failed and uncertain delivery states. A transport acknowledgement proves sending only. A timeout after dispatch is uncertain, requiring reconciliation before retry. Use immutable snapshots including order, SKU-rule and template versions; approval and dispatch each recheck source versions. Idempotency must include tenant, source revision, line and label purpose. Reprints require reason, operator and bounded selected quantities linked to the original job. Confirmation must record actual output and discrepancies.
+Cancellation uses a higher revision, `status: "cancelled"` and `lines: []`. Identical revisions compare normalized recognized fields, with sorted line IDs. A whole import fails atomically on conflict. Decimal quantities are intentionally rejected until unit precision and rounding policies are defined. Field IDs are trimmed, bounded to 128 characters, and reject control characters. Dates must be real ISO calendar dates. Unknown outlet or SKU/unit values can be received but block batch preparation until mapped; they are never guessed.
 
-## Delivery sequence
+Limits: 1,000 orders per import, 1,000 lines per order, 5,000 current orders / 20,000 current lines / 20,000 received revisions / 1,000 batches per local workspace, 100,000 labels per line and 250,000 labels per batch. These are guardrails, not load-tested throughput claims. The parent HTTP server retains its 16 MiB body limit. JSON-file storage is not designed for unbounded retained history; archive/database migration is needed before these limits.
 
-1. Validate existing Apps Script outputs with actual orders and approved templates.
-2. Add authenticated tenant-aware persistence and adapter contract tests.
-3. Read-only Sheets adapter; compare batch counts/content with the existing system.
-4. Add reviewed product/outlet rules and versioned template management.
-5. Connect local print bridge; validate physical stock, quality, failure and restart behavior.
-6. Connect ordering website adapter, then consider automatic dispatch for approved exception-free rules.
+## Endpoints
 
-This repository currently assumes a trusted local network and has no tenant authentication. Do not expose its API publicly or claim multi-company readiness before authorization and isolation are implemented. PDF template ingestion is also future work; the existing editor uses its native template documents.
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/studio` | Current configuration, orders, revisions and batches with derived stale state |
+| PUT | `/api/studio/settings` | Validate and replace outlet/SKU rule configuration |
+| POST | `/api/studio/orders` | Atomically import/replay/amend/cancel orders |
+| POST | `/api/studio/preview` | Calculate selected-date plan (`deliveryDate` body) |
+| POST | `/api/studio/batches` | Prepare or return existing current-source snapshot (`deliveryDate` body) |
+| POST | `/api/studio/batches/:id/approve` | Recheck sources and record local confirmation |
 
-## Verification of this preview
+No Studio dispatch or reprint endpoint exists. Existing single-template editor/printing APIs remain independent and do **not** enforce Studio batch approval. Do not interpret this prototype as a production print permission gate.
 
-Lint, production build (including Vue type checking), shared/server type checking,
-and all 25 existing tests pass. Browser QA was attempted but the environment has
-no installed Chromium executable; desktop/mobile visual and interaction checks
-remain pending. The approval preview is not a tested production batch service.
+## Production boundary and remaining work
+
+The ordering website must own order identity, amendments, cutoff and delivery commitments. Studio owns explicit label mappings, quantity/EXP policies, template versions, immutable batch approvals and print/reprint audit. Initial Sheets and future website adapters should normalize into one contract, with schema version, authenticated server-resolved tenant identity and stable external IDs. They are not connected yet.
+
+Before production, add authenticated tenant/role enforcement, a transactional database with cross-process uniqueness, API credentials and adapter retries, dedicated master-data forms, production date/expiry/storage policy, placeholder/field mapping, approved artwork/PDF template ingestion, quantity-plan-to-label rendering, PDF/physical-stock validation and backups. Current local template reads and Studio file writes are not one transaction; approval can become stale immediately after an external template edit. A dispatch worker must recheck transactional/versioned sources at send time.
+
+Printing state design: generated → awaiting approval → approved → queued → sending → sent → operator-confirmed output. Preserve blocked, stale, cancelled, failed and uncertain delivery states. A timeout after sending requires reconciliation before retry. Reprints need selected bounded quantities, reason, authenticated operator and links to the original job. None of the dispatch, output-confirmation or reprint stages are implemented in Studio yet.
+
+## Verification
+
+Meaningful service and HTTP tests cover restart persistence, concurrent replay/creation/approval, immutable source snapshots, revision conflict rollback, cancellation, rules/template invalidation, invalid input, line/batch limits, corrupt-file failure and missing Studio print routes. Existing rendering/transport tests remain intact. See PR validation for current counts.
+
+Desktop/mobile browser QA remains pending: Playwright is installed but Chromium download fails in this environment. No successful visual or physical-printer validation is claimed.
