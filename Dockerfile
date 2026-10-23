@@ -16,6 +16,8 @@ COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/server/package.json ./packages/server/
 COPY packages/designer/package.json ./packages/designer/
+COPY packages/cloudflare-api/package.json ./packages/cloudflare-api/
+COPY packages/studio-web/package.json ./packages/studio-web/
 RUN npm ci
 # Root tsconfig the per-package tsconfigs extend; needed when source is mounted (dev).
 COPY tsconfig.base.json ./

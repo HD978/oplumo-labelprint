@@ -33,6 +33,16 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Build Cloudflare V2 locally
+        run: npm run build:v2
+
+      - name: V2 mapping tests
+        run: npm run test:v2
+
+      - name: V2 isolated Cloudflare integration
+        if: matrix.node == 24
+        run: npm run test:integration -w @oplumo/cloudflare-api
+
       - name: Typecheck
         run: npm run typecheck
 
