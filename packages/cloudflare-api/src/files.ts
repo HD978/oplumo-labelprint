@@ -75,12 +75,18 @@ export async function fileRoutes(request: Request, env: Env, a: Actor, path: str
     const obj = await env.FILES.get(f.r2_key);
     if (!obj) fail('文件原稿不存在', 404);
     const safe = ['png', 'jpg', 'jpeg'].includes(f.file_type);
+    const inlinePdf =
+      f.file_type === 'pdf' &&
+      f.r2_key.split('/')[1] === 'generated' &&
+      new URL(request.url).searchParams.get('inline') === '1';
     return new Response(obj.body, {
       headers: {
         'Content-Type': safe
           ? `image/${f.file_type === 'png' ? 'png' : 'jpeg'}`
-          : 'application/octet-stream',
-        'Content-Disposition': `${safe ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(f.filename)}`,
+          : inlinePdf
+            ? 'application/pdf'
+            : 'application/octet-stream',
+        'Content-Disposition': `${safe || inlinePdf ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(f.filename)}`,
         'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'private, no-store',
       },

@@ -34,7 +34,8 @@
     "format": "biome check --write .",
     "build:v2": "npm run build -w @labelprint/shared && npm run build -w @oplumo/studio-web && npm run build -w @oplumo/cloudflare-api",
     "test:v2": "npm test -w @oplumo/cloudflare-api",
-    "dev:v2": "npm run dev -w @oplumo/cloudflare-api"
+    "dev:v2": "npm run dev -w @oplumo/cloudflare-api",
+    "dev:v2:preview": "node packages/cloudflare-api/test/preview.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3"

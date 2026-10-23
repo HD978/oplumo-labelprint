@@ -153,6 +153,7 @@ function writeHashRoute(route: HashRoute, replace = false): void {
 function applyHashRoute(route: HashRoute): void {
   if (
     route.view === 'design' &&
+    route.templateId !== state.doc?.id &&
     route.templateId &&
     state.templates.some((t) => t.id === route.templateId)
   ) {

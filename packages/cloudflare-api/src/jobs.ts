@@ -72,6 +72,9 @@ export async function jobRoutes(request: Request, env: Env, a: Actor, path: stri
     if (!['pdf', 'zpl', 'both'].includes(String(b.outputType))) fail('输出格式不正确');
     const uid = id(),
       time = now();
+    const encodedLines = JSON.stringify(p.lines);
+    if (new TextEncoder().encode(encodedLines).length > 8 * 1024 * 1024)
+      fail('任务快照过大，请按 SKU 分批提交');
     const statements = [
       stmt(
         env,
@@ -86,20 +89,43 @@ export async function jobRoutes(request: Request, env: Env, a: Actor, path: stri
         time,
         time,
       ),
-      ...p.lines.map((line) =>
+    ];
+    let chunk: typeof p.lines = [],
+      chunkBytes = 0;
+    const flush = () => {
+      if (!chunk.length) return;
+      statements.push(
         stmt(
           env,
-          'INSERT INTO print_job_items VALUES(?,?,?,?,?,?)',
+          `INSERT INTO print_job_items(workspace_id,job_id,position,sku_id,copies,snapshot_json) SELECT ?,?,json_extract(value,'$.position'),json_extract(value,'$.sku_id'),json_extract(value,'$.copies'),json_extract(value,'$.snapshot') FROM json_each(?)`,
           w,
           uid,
-          line.position,
-          line.sku_id,
-          line.copies,
-          JSON.stringify(line.snapshot),
+          JSON.stringify(chunk),
         ),
-      ),
-    ];
-    await env.DB.batch(statements);
+      );
+      chunk = [];
+      chunkBytes = 0;
+    };
+    for (const line of p.lines) {
+      const size = new TextEncoder().encode(JSON.stringify(line)).length;
+      if (chunk.length && chunkBytes + size > 512 * 1024) flush();
+      chunk.push(line);
+      chunkBytes += size;
+    }
+    flush();
+    try {
+      await env.DB.batch(statements);
+    } catch (error) {
+      const existing = await stmt(
+        env,
+        'SELECT * FROM print_jobs WHERE workspace_id=? AND idempotency_key=?',
+        w,
+        key,
+      ).first<Job>();
+      if (existing?.input_hash === inputHash) return json(existing);
+      throw error;
+    }
+
     await audit(env, a, 'job.review', uid, { labels: p.total });
     return json(
       await stmt(env, 'SELECT * FROM print_jobs WHERE workspace_id=? AND id=?', w, uid).first(),
@@ -142,26 +168,38 @@ export async function jobRoutes(request: Request, env: Env, a: Actor, path: stri
           w,
           j.id,
         );
+        const currentTemplates = new Map(
+          (
+            await rows<{ id: string; version: number; status: string }>(
+              env,
+              'SELECT id,version,status FROM templates WHERE workspace_id=?',
+              w,
+            )
+          ).map((x) => [x.id, x]),
+        );
+        const currentSkus = new Map(
+          (
+            await rows<{ id: string; version: number; is_active: number }>(
+              env,
+              'SELECT id,version,is_active FROM skus WHERE workspace_id=?',
+              w,
+            )
+          ).map((x) => [x.id, x]),
+        );
+        const currentMappings = new Map(
+          (
+            await rows<{ id: string; version: number; status: string }>(
+              env,
+              'SELECT id,version,status FROM mappings WHERE workspace_id=?',
+              w,
+            )
+          ).map((x) => [x.id, x]),
+        );
         for (const item of items) {
           const snap = JSON.parse(item.snapshot_json) as Snapshot;
-          const template = await stmt(
-            env,
-            'SELECT version,status FROM templates WHERE workspace_id=? AND id=?',
-            w,
-            snap.doc.id,
-          ).first<{ version: number; status: string }>();
-          const sku = await stmt(
-            env,
-            'SELECT version,is_active FROM skus WHERE workspace_id=? AND id=?',
-            w,
-            snap.sku.id,
-          ).first<{ version: number; is_active: number }>();
-          const mapping = await stmt(
-            env,
-            'SELECT version,status FROM mappings WHERE workspace_id=? AND id=?',
-            w,
-            snap.mappingId,
-          ).first<{ version: number; status: string }>();
+          const template = currentTemplates.get(snap.doc.id),
+            sku = currentSkus.get(snap.sku.id),
+            mapping = currentMappings.get(snap.mappingId);
           if (
             !template ||
             template.version !== snap.templateVersion ||
@@ -500,7 +538,21 @@ export class LabelJob {
           `SELECT * FROM ${table} WHERE ${table === 'workspaces' ? 'id' : 'workspace_id'}=?`,
           w,
         );
-      const assets = data.assets as { r2_key: string; size_bytes: number; filename: string }[];
+      const exportIds = new Set(
+        (data.print_jobs as Job[]).filter((job) => job.kind === 'export').map((job) => job.id),
+      );
+      const assets = (
+        data.assets as { r2_key: string; size_bytes: number; filename: string }[]
+      ).filter((asset) => !exportIds.has(asset.r2_key.split('/')[2]!));
+      data.assets = assets;
+      data.excludedDerivedBackups = true;
+      if (env.FONT_KEY) {
+        const font = await env.FILES.head(env.FONT_KEY);
+        if (font) {
+          assets.push({ r2_key: env.FONT_KEY, size_bytes: font.size, filename: 'render-font.ttf' });
+          data.fontKey = env.FONT_KEY;
+        }
+      }
       const key = `${w}/generated/${j.id}/master.json`;
       await env.FILES.put(key, JSON.stringify(data), {
         httpMetadata: { contentType: 'application/json' },

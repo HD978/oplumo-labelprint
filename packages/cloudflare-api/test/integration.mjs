@@ -6,6 +6,7 @@ import { PDFDocument } from 'pdf-lib';
 const root = new URL('../', import.meta.url);
 const mf = new Miniflare({
   modules: true,
+  cf: false, // Never fetch Cloudflare request metadata; fixtures stay offline.
   scriptPath: new URL('dist/index.js', root).pathname,
   modulesRules: [{ type: 'CompiledWasm', include: ['**/*.wasm'], fallthrough: true }],
   compatibilityDate: '2026-07-01',
@@ -242,6 +243,15 @@ try {
       await writeFile(new URL('test/generated-proof.pdf', root), new Uint8Array(bytes));
   }
   assert.equal(pages, 3001);
+  const pdfAsset = files.find((f) => f.filename.endsWith('.pdf'));
+  const inlinePdf = await response(
+    `/api/assets/${pdfAsset.id}/file?inline=1`,
+    'GET',
+    undefined,
+    worker,
+  );
+  assert.equal(inlinePdf.headers.get('content-type'), 'application/pdf');
+  assert(inlinePdf.headers.get('content-disposition').startsWith('inline'));
   const file = files[0];
   await request(`/api/assets/${file.id}/file`, 'GET', undefined, other, 404);
   const print = {
@@ -321,22 +331,65 @@ try {
   assert.equal(malicious.status, 403);
   // A failure before a part is committed must be retryable without double counts.
   await bucket.delete('_system/font.ttf');
-  const retryInput={...input,lines:[{sku_code:'0001',quantity:1}]};
-  const retryPlan=await request('/api/jobs/preview','POST',retryInput,manager);
-  const retryJob=await request('/api/jobs','POST',{input:retryInput,fingerprint:retryPlan.fingerprint,outputType:'pdf',idempotencyKey:'retry-test'},manager,201);
-  await request(`/api/jobs/${retryJob.id}/start`,'POST',{},manager);
-  for(let i=0;i<100;i++){const r=await request(`/api/jobs/${retryJob.id}`,'GET',undefined,manager);if(r.status==='failed')break;await new Promise(r=>setTimeout(r,100));}
-  assert.equal((await request(`/api/jobs/${retryJob.id}`,'GET',undefined,manager)).status,'failed');
-  await bucket.put('_system/font.ttf',await readFile('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'));
-  await request(`/api/jobs/${retryJob.id}/retry`,'POST',{},manager);
-  for(let i=0;i<100;i++){const r=await request(`/api/jobs/${retryJob.id}`,'GET',undefined,manager);if(r.status==='completed')break;await new Promise(r=>setTimeout(r,100));}
-  const retried=await request(`/api/jobs/${retryJob.id}`,'GET',undefined,manager);assert.equal(retried.status,'completed');assert.equal(retried.success_count,1);
-  const originalSnapshot=await db.prepare('SELECT snapshot_json FROM print_job_items WHERE workspace_id=? AND job_id=?').bind(wid,job.id).first();assert.equal(JSON.parse(originalSnapshot.snapshot_json).values.expiry,'30/10/2026');
-  await request('/api/export','POST',{},worker,403);
-  const exported=await request('/api/export','POST',{},manager,201);
-  for(let i=0;i<200;i++){const r=await request(`/api/jobs/${exported.id}`,'GET',undefined,manager);if(['completed','failed'].includes(r.status))break;await new Promise(r=>setTimeout(r,100));}
-  const exportJob=await request(`/api/jobs/${exported.id}`,'GET',undefined,manager);assert.equal(exportJob.status,'completed',JSON.stringify(exportJob));const exportFiles=await request(`/api/jobs/${exported.id}/files`,'GET',undefined,manager);assert(exportFiles.length>0);
-  const master=await bucket.get(`${wid}/generated/${exported.id}/master.json`);const snapshot=JSON.parse(await master.text());assert.equal(snapshot.workspaceId,wid);assert(snapshot.skus.length>0);assert(!('users' in snapshot));assert(!('sessions' in snapshot));
+  const retryInput = { ...input, lines: [{ sku_code: '0001', quantity: 1 }] };
+  const retryPlan = await request('/api/jobs/preview', 'POST', retryInput, manager);
+  const retryJob = await request(
+    '/api/jobs',
+    'POST',
+    {
+      input: retryInput,
+      fingerprint: retryPlan.fingerprint,
+      outputType: 'pdf',
+      idempotencyKey: 'retry-test',
+    },
+    manager,
+    201,
+  );
+  await request(`/api/jobs/${retryJob.id}/start`, 'POST', {}, manager);
+  for (let i = 0; i < 100; i++) {
+    const r = await request(`/api/jobs/${retryJob.id}`, 'GET', undefined, manager);
+    if (r.status === 'failed') break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  assert.equal(
+    (await request(`/api/jobs/${retryJob.id}`, 'GET', undefined, manager)).status,
+    'failed',
+  );
+  await bucket.put(
+    '_system/font.ttf',
+    await readFile('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),
+  );
+  await request(`/api/jobs/${retryJob.id}/retry`, 'POST', {}, manager);
+  for (let i = 0; i < 100; i++) {
+    const r = await request(`/api/jobs/${retryJob.id}`, 'GET', undefined, manager);
+    if (r.status === 'completed') break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  const retried = await request(`/api/jobs/${retryJob.id}`, 'GET', undefined, manager);
+  assert.equal(retried.status, 'completed');
+  assert.equal(retried.success_count, 1);
+  const originalSnapshot = await db
+    .prepare('SELECT snapshot_json FROM print_job_items WHERE workspace_id=? AND job_id=?')
+    .bind(wid, job.id)
+    .first();
+  assert.equal(JSON.parse(originalSnapshot.snapshot_json).values.expiry, '30/10/2026');
+  await request('/api/export', 'POST', {}, worker, 403);
+  const exported = await request('/api/export', 'POST', {}, manager, 201);
+  for (let i = 0; i < 200; i++) {
+    const r = await request(`/api/jobs/${exported.id}`, 'GET', undefined, manager);
+    if (['completed', 'failed'].includes(r.status)) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  const exportJob = await request(`/api/jobs/${exported.id}`, 'GET', undefined, manager);
+  assert.equal(exportJob.status, 'completed', JSON.stringify(exportJob));
+  const exportFiles = await request(`/api/jobs/${exported.id}/files`, 'GET', undefined, manager);
+  assert(exportFiles.length > 0);
+  const master = await bucket.get(`${wid}/generated/${exported.id}/master.json`);
+  const snapshot = JSON.parse(await master.text());
+  assert.equal(snapshot.workspaceId, wid);
+  assert(snapshot.skus.length > 0);
+  assert(!('users' in snapshot));
+  assert(!('sessions' in snapshot));
   console.log(
     'PASS: 10 tenants; authenticated role and file isolation; master mapping + immutable dates; 3001 labels in exact-size PDF/ZPL/ZIP shards; idempotent generation; print vs reprint totals; master diff apply; cancellation and stale preview rejection; retry after rendering failure; preserved original expiry; complete workspace export; CSRF.',
   );
