@@ -20,3 +20,12 @@ out_docker/
 
 # Generated Excel label exports and source snapshots
 data/bulk/
+
+# Cloudflare runtime state, secrets, generated artifacts
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+**/dist/
+**/*.tsbuildinfo
+packages/cloudflare-api/test/generated-proof.pdf

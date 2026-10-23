@@ -239,3 +239,15 @@ See [Excel bulk labels](docs/EXCEL-BULK-LABELS.md). It is independent of the ord
 inbox: rendering approved order batches, calculating EXP, synchronizing Sheets or
 web orders, dispatching print jobs and managing reprints remain pending. See [workspace setup, API and
 production gaps](docs/LABEL-STUDIO.md).
+
+## OPLUMO Label Studio V2 — Cloudflare target
+
+V2 adds an independent authenticated Vue/Workers application in
+`packages/studio-web` and `packages/cloudflare-api`: tenant isolation, QA/Manager/
+Worker permissions, versioned SKU masters and field/date mappings, resumable
+PDF/ZPL/ZIP generation, distinct print/reprint statistics and workspace exports.
+The Node application and published browser-local Sites demo remain separate.
+Build locally with `npm run build:v2`; run `npm run test:v2` and
+`npm run test:integration -w @oplumo/cloudflare-api`.
+See [V2 setup, boundaries and Cloudflare deployment](docs/LABEL-STUDIO-V2.md).
+Cloudflare deployment and physical printer acceptance are not yet completed.
