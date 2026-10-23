@@ -34,6 +34,8 @@ QA/Manager can start a workspace export job. Download **all ZIP volumes**; the f
 
 ## Local setup and verification
 
+Use Node 24 LTS (V2 local Cloudflare tooling requires Node 22+; the original Node service retains its Node 20 CI checks).
+
 ```
 npm ci
 npm run build:v2
